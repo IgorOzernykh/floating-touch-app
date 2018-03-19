@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">FloatingTouch</string>
+    <string name="btn_text">Create floating button</string>
+    <string name="btn_remove_text">Remove floating button</string>
+</resources>
