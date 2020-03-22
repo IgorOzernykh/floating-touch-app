@@ -4,4 +4,5 @@
     <string name="btn_manage_accessibility_text">Manage accessibility settings</string>
     <string name="btn_manage_overlay">Manage overlay settings</string>
     <string name="btn_remove_text">Remove floating button</string>
+    <string name="permissions_required">Draw over apps permission required</string>
 </resources>

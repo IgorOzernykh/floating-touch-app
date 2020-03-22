@@ -14,9 +14,9 @@ public class MainActivity extends AppCompatActivity {
     public static final String TOUCH_OPACITY = "com.mouceu.floatingtouch.MainActivity_SERVICE_DATA";
     private static final int DRAW_OVER_OTHER_APP_PERMISSION_CODE = 2084;
     private static final int ENABLE_ACCESSIBILITY_PERMISSION_CODE = 2085;
+    static final String OPACITY_SETTING_NAME = "OPACITY";
 
     private int selectedOpacity = 0;
-    private SeekBar opacityPicker;
     private TextView opacityPickerValue;
 
     @Override
@@ -49,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(
                         this,
-                        "Draw over apps permission required",
+                        R.string.permissions_required,
                         Toast.LENGTH_SHORT
                 ).show();
             }
@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btn_enable).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Util.saveSetting(OPACITY_SETTING_NAME, selectedOpacity, MainActivity.this);
                 Bundle bundle = new Bundle();
                 bundle.putInt(TOUCH_OPACITY, selectedOpacity);
                 Intent intent = new Intent(MainActivity.this, FloatingViewService.class);
@@ -76,8 +77,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initOpacityPicker() {
-        opacityPicker = findViewById(R.id.opacity_picker);
+        SeekBar opacityPicker = findViewById(R.id.opacity_picker);
         opacityPickerValue = findViewById(R.id.opacity_picker_value);
+        selectedOpacity = Util.getSetting(OPACITY_SETTING_NAME, 0, MainActivity.this);
+        opacityPickerValue.setText(String.valueOf(selectedOpacity));
+        opacityPicker.setProgress(selectedOpacity);
 
         opacityPicker.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -131,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
 
 
 }

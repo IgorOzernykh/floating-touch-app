@@ -1,6 +1,7 @@
 package com.mouceu.floatingtouch;
 
 import android.accessibilityservice.AccessibilityService;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.Build;
@@ -18,6 +19,8 @@ import android.view.accessibility.AccessibilityEvent;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FloatingViewService extends AccessibilityService {
+    private static final String POSITION_X_KEY = "POS_X";
+    private static final String POSITION_Y_KEY = "POS_Y";
 
     private WindowManager windowManager;
     private View floatingView;
@@ -82,9 +85,14 @@ public class FloatingViewService extends AccessibilityService {
                 case MotionEvent.ACTION_MOVE:
                     if (longPressed.get()) {
 
-                        layoutParams.x = initialX + (int) (event.getRawX() - initialTouchX);
-                        layoutParams.y = initialY + (int) (event.getRawY() - initialTouchY);
+                        int x = initialX + (int) (event.getRawX() - initialTouchX);
+                        layoutParams.x = x;
+                        int y = initialY + (int) (event.getRawY() - initialTouchY);
+                        layoutParams.y = y;
 
+                        Context ctx = getApplicationContext();
+                        Util.saveSetting(POSITION_X_KEY, x, ctx);
+                        Util.saveSetting(POSITION_Y_KEY, y, ctx);
                         windowManager.updateViewLayout(floatingView, layoutParams);
                     } else {
                         handler.removeCallbacks(longPressedChecked);
@@ -137,8 +145,8 @@ public class FloatingViewService extends AccessibilityService {
             if (swipeState.swipeUp) {
                 if ("OnePlus".equalsIgnoreCase(Build.MANUFACTURER)) {
                     Intent intent = new Intent();
-                    intent.setAction(Intent.ACTION_MAIN);// "android.intent.action.MAIN"
-                    intent.addCategory(Intent.CATEGORY_HOME); //"android.intent.category.HOME"
+                    intent.setAction(Intent.ACTION_MAIN);
+                    intent.addCategory(Intent.CATEGORY_HOME);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
                 } else {
@@ -149,7 +157,13 @@ public class FloatingViewService extends AccessibilityService {
                 performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS);
             if (swipeState.swipeRight) {
                 performGlobalAction(GLOBAL_ACTION_RECENTS);
-                performGlobalAction(GLOBAL_ACTION_RECENTS);
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        performGlobalAction(GLOBAL_ACTION_RECENTS);
+                    }
+                }, 50);
+
             }
             if (swipeState.swipeLeft)
                 performGlobalAction(GLOBAL_ACTION_RECENTS);
@@ -184,14 +198,9 @@ public class FloatingViewService extends AccessibilityService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Bundle extras = intent.getExtras();
-        int opacity = 0;
-        if (extras != null)
-            opacity = extras.getInt(MainActivity.TOUCH_OPACITY);
-        opacity = (opacity > 100) ? 100 : ((opacity < 0) ? 0 : opacity);
 
         floatingView = LayoutInflater.from(this).inflate(R.layout.floating_touch, null);
-        floatingView.setAlpha((100 - opacity) / 100.0f);
+        floatingView.setAlpha(getOpacity(intent.getExtras()));
 
         final WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -203,8 +212,9 @@ public class FloatingViewService extends AccessibilityService {
         );
 
         layoutParams.gravity = Gravity.TOP | Gravity.START;
-        layoutParams.x = 0;
-        layoutParams.y = 100;
+        Context context = getApplicationContext();
+        layoutParams.x = Util.getSetting(POSITION_X_KEY, 100, context);
+        layoutParams.y = Util.getSetting(POSITION_Y_KEY, 100, context);
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         if (windowManager == null)
@@ -215,6 +225,14 @@ public class FloatingViewService extends AccessibilityService {
         floatingView.setOnTouchListener(new MyOnTouchEventListener(layoutParams));
 
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private float getOpacity(Bundle extras) {
+        int opacity = 0;
+        if (extras != null)
+            opacity = extras.getInt(MainActivity.TOUCH_OPACITY);
+        opacity = (opacity > 100) ? 100 : ((opacity < 0) ? 0 : opacity);
+        return (100 - opacity) / 100.0f;
     }
 
     private boolean isTouchPerformed(int xDiff, int yDiff) {
