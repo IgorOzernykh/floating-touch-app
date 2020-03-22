@@ -15,7 +15,6 @@ import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FloatingViewService extends AccessibilityService {
@@ -211,44 +210,8 @@ public class FloatingViewService extends AccessibilityService {
             throw new RuntimeException("Window manager is null");
         windowManager.addView(floatingView, layoutParams);
 
-        final View floatingView = this.floatingView.findViewById(R.id.rl_floating_view_root);
+        final View floatingView = this.floatingView.findViewById(R.id.iv_floating_button);
         floatingView.setOnTouchListener(new MyOnTouchEventListener(layoutParams));
-//        floatingView.setOnTouchListener(new View.OnTouchListener() {
-//            private int initialX;
-//            private int initialY;
-//            private float initialTouchX;
-//            private float initialTouchY;
-//
-//            @Override
-//            public boolean onTouch(View v, MotionEvent event) {
-//                switch (event.getAction()) {
-//                    case MotionEvent.ACTION_DOWN:
-//                        initialX = layoutParams.x;
-//                        initialY = layoutParams.y;
-//
-//                        initialTouchX = event.getRawX();
-//                        initialTouchY = event.getRawY();
-//                        return true;
-//                    case MotionEvent.ACTION_UP:
-//                        int xDiff = (int) (event.getRawX() - initialTouchX);
-//                        int yDiff = (int) (event.getRawY() - initialTouchY);
-//
-//                        if (isTouchPerformed(xDiff, yDiff)) {
-//                            performGlobalAction(GLOBAL_ACTION_BACK);
-//                        }
-//                        return true;
-//
-//                    case MotionEvent.ACTION_MOVE:
-//
-//                        layoutParams.x = initialX + (int) (event.getRawX() - initialTouchX);
-//                        layoutParams.y = initialY + (int) (event.getRawY() - initialTouchY);
-//
-//                        windowManager.updateViewLayout(FloatingViewService.this.floatingView, layoutParams);
-//                        return true;
-//                }
-//                return false;
-//            }
-//        });
 
         return super.onStartCommand(intent, flags, startId);
     }

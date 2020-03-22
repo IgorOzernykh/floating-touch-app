@@ -2,10 +2,9 @@ package com.mouceu.floatingtouch;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -14,6 +13,7 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
     public static final String TOUCH_OPACITY = "com.mouceu.floatingtouch.MainActivity_SERVICE_DATA";
     private static final int DRAW_OVER_OTHER_APP_PERMISSION_CODE = 2084;
+    private static final int ENABLE_ACCESSIBILITY_PERMISSION_CODE = 2085;
 
     private int selectedOpacity = 0;
     private SeekBar opacityPicker;
@@ -30,27 +30,32 @@ public class MainActivity extends AppCompatActivity {
                     Uri.parse("package:" + getPackageName())
             );
             startActivityForResult(intent, DRAW_OVER_OTHER_APP_PERMISSION_CODE);
+
         } else {
             initView();
         }
 
         initOpacityPicker();
+        initManageAccessibilityButton();
+        initManageOverlayButton();
         initRemoveButton();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == DRAW_OVER_OTHER_APP_PERMISSION_CODE) {
-            if (resultCode == RESULT_OK) {
+            if (Settings.canDrawOverlays(this)) {
                 initView();
             } else {
                 Toast.makeText(
                         this,
-                        "Draw over apps permission required. Exiting",
+                        "Draw over apps permission required",
                         Toast.LENGTH_SHORT
                 ).show();
-                finish();
             }
+        } else if (requestCode == ENABLE_ACCESSIBILITY_PERMISSION_CODE) {
+            if (Util.isAccessibilityServiceEnabled(this, FloatingViewService.class))
+                initView();
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
@@ -102,4 +107,30 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void initManageAccessibilityButton() {
+        findViewById(R.id.button_manage_accessibility).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent accessibilityIntent = new Intent(
+                        Settings.ACTION_ACCESSIBILITY_SETTINGS
+                );
+                startActivityForResult(accessibilityIntent, ENABLE_ACCESSIBILITY_PERMISSION_CODE);
+            }
+        });
+    }
+    private void initManageOverlayButton() {
+        findViewById(R.id.button_manage_overlay).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + getPackageName())
+                );
+                startActivityForResult(intent, DRAW_OVER_OTHER_APP_PERMISSION_CODE);
+            }
+        });
+    }
+
+
 }

@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">FloatingTouch</string>
     <string name="btn_text">Create floating button</string>
+    <string name="btn_manage_accessibility_text">Manage accessibility settings</string>
+    <string name="btn_manage_overlay">Manage overlay settings</string>
     <string name="btn_remove_text">Remove floating button</string>
 </resources>
