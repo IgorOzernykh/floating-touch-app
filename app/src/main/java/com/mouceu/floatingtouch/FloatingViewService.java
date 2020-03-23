@@ -1,12 +1,15 @@
 package com.mouceu.floatingtouch;
 
 import android.accessibilityservice.AccessibilityService;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -24,14 +27,71 @@ public class FloatingViewService extends AccessibilityService {
 
     private WindowManager windowManager;
     private View floatingView;
+    private BroadcastReceiver broadcastReceiver;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_touch, null);
+        floatingView.setAlpha(getStoredOpacity());
 
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                floatingView.setAlpha(getOpacity(intent.getExtras()));
+            }
+        };
+        LocalBroadcastManager.getInstance(this)
+                .registerReceiver(broadcastReceiver, new IntentFilter(MainActivity.SERVICE_PARAMS));
+
+        final WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        | WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN,
+                PixelFormat.TRANSLUCENT
+        );
+        layoutParams.gravity = Gravity.TOP | Gravity.START;
+        layoutParams.x = Util.getSetting(POSITION_X_KEY, 100, this);
+        layoutParams.y = Util.getSetting(POSITION_Y_KEY, 100, this);
+
+        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        windowManager.addView(floatingView, layoutParams);
+
+        final View floatingView = this.floatingView.findViewById(R.id.iv_floating_button);
+        floatingView.setOnTouchListener(new FloatingViewOnTouchListener(layoutParams));
     }
 
-    private class MyOnTouchEventListener implements View.OnTouchListener {
+    @Override
+    public boolean onUnbind(Intent intent) {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        return super.onUnbind(intent);
+    }
+
+    @Override
+    public void onAccessibilityEvent(AccessibilityEvent event) {
+    }
+
+    @Override
+    public void onInterrupt() {
+    }
+
+    private float getOpacity(Bundle extras) {
+        int opacity = 0;
+        if (extras != null)
+            opacity = extras.getInt(MainActivity.OPACITY_SETTING_NAME);
+        opacity = (opacity > 100) ? 100 : ((opacity < 0) ? 0 : opacity);
+        return (100 - opacity) / 100.0f;
+    }
+
+    private float getStoredOpacity() {
+        int opacity = Util.getSetting(MainActivity.OPACITY_SETTING_NAME, 0, this);
+        opacity = (opacity > 100) ? 100 : ((opacity < 0) ? 0 : opacity);
+        return (100 - opacity) / 100.0f;
+    }
+
+    private class FloatingViewOnTouchListener implements View.OnTouchListener {
         private final WindowManager.LayoutParams layoutParams;
         private final Handler handler = new Handler();
         private final Runnable longPressedChecked = new Runnable() {
@@ -50,7 +110,7 @@ public class FloatingViewService extends AccessibilityService {
         private float initialTouchX;
         private float initialTouchY;
 
-        public MyOnTouchEventListener(WindowManager.LayoutParams layoutParams) {
+        public FloatingViewOnTouchListener(WindowManager.LayoutParams layoutParams) {
             this.layoutParams = layoutParams;
         }
 
@@ -193,67 +253,5 @@ public class FloatingViewService extends AccessibilityService {
             }
             return false;
         }
-    }
-
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-
-        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_touch, null);
-        floatingView.setAlpha(getOpacity(intent.getExtras()));
-
-        final WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN,
-                PixelFormat.TRANSLUCENT
-        );
-
-        layoutParams.gravity = Gravity.TOP | Gravity.START;
-        Context context = getApplicationContext();
-        layoutParams.x = Util.getSetting(POSITION_X_KEY, 100, context);
-        layoutParams.y = Util.getSetting(POSITION_Y_KEY, 100, context);
-
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        if (windowManager == null)
-            throw new RuntimeException("Window manager is null");
-        windowManager.addView(floatingView, layoutParams);
-
-        final View floatingView = this.floatingView.findViewById(R.id.iv_floating_button);
-        floatingView.setOnTouchListener(new MyOnTouchEventListener(layoutParams));
-
-        return super.onStartCommand(intent, flags, startId);
-    }
-
-    private float getOpacity(Bundle extras) {
-        int opacity = 0;
-        if (extras != null)
-            opacity = extras.getInt(MainActivity.TOUCH_OPACITY);
-        opacity = (opacity > 100) ? 100 : ((opacity < 0) ? 0 : opacity);
-        return (100 - opacity) / 100.0f;
-    }
-
-    private boolean isTouchPerformed(int xDiff, int yDiff) {
-        return xDiff < 10 && yDiff < 10;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (floatingView != null)
-            windowManager.removeView(floatingView);
-    }
-
-
-    @Override
-    public void onAccessibilityEvent(AccessibilityEvent event) {
-
-    }
-
-    @Override
-    public void onInterrupt() {
-
     }
 }
