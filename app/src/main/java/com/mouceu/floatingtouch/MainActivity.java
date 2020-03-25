@@ -7,7 +7,10 @@ import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,6 +19,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int ENABLE_ACCESSIBILITY_CODE = 2085;
     static final String SERVICE_PARAMS = "com.mouceu.floatingtouch.SERVICE_PARAMS";
     static final String OPACITY_SETTING_NAME = "OPACITY";
+    static final String ANGLE_SETTING_NAME = "ANGLE";
+    static final int DEFAULT_ANGLE = 90;
 
     private int selectedOpacity = 0;
     private TextView opacityPickerValue;
@@ -41,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(accessibilityIntent, ENABLE_ACCESSIBILITY_CODE);
         }
 
+        initAngleSpinner();
         initOpacityPicker();
         initManageAccessibilityButton();
         initManageOverlayButton();
@@ -67,6 +73,34 @@ public class MainActivity extends AppCompatActivity {
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    private void initAngleSpinner() {
+        Spinner angleSpinner = findViewById(R.id.angle_spinner);
+        Integer[] values = {15, 30, 45, 60, 75, DEFAULT_ANGLE};
+        final ArrayAdapter<Integer> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, values);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        angleSpinner.setAdapter(adapter);
+        angleSpinner.setSelection(values.length - 1);
+
+        angleSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                Integer selectedAngle = adapter.getItem(position);
+                if (selectedAngle == null) selectedAngle = DEFAULT_ANGLE;
+                Util.saveSetting(ANGLE_SETTING_NAME, selectedAngle, MainActivity.this);
+                Bundle bundle = new Bundle();
+                bundle.putInt(ANGLE_SETTING_NAME, selectedAngle);
+                Intent intent = new Intent(SERVICE_PARAMS);
+                intent.putExtras(bundle);
+                broadcastManager.sendBroadcast(intent);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
     }
 
     private void initOpacityPicker() {

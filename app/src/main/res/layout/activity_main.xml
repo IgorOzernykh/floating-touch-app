@@ -10,15 +10,45 @@
     android:paddingBottom="16dp"
     tools:context="com.mouceu.floatingtouch.MainActivity">
 
+
     <TextView
-        android:id="@+id/opacity_picker_value"
+        android:id="@+id/angle_spinner_title"
+        style="@style/TextViewPrimary"
+        android:layout_marginBottom="52dp"
+        android:text="@string/angle_spinner_title"
+        app:layout_constraintBottom_toTopOf="@+id/opacity_picker_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.3"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Spinner
+        android:id="@+id/angle_spinner"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="52dp"
+        app:layout_constraintBottom_toTopOf="@+id/opacity_picker_value"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/angle_spinner_title" />
+
+    <TextView
+        android:id="@+id/opacity_picker_title"
+        style="@style/TextViewPrimary"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="20dp"
+        android:text="@string/opacity_picker_title"
+        app:layout_constraintBottom_toTopOf="@+id/opacity_picker"
+        app:layout_constraintEnd_toStartOf="@+id/opacity_picker_value" />
+
+    <TextView
+        android:id="@+id/opacity_picker_value"
+        style="@style/TextViewPrimary"
+        android:layout_marginBottom="20dp"
         android:text="0"
-        android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/opacity_picker"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.7"
         app:layout_constraintStart_toStartOf="parent" />
 
     <SeekBar

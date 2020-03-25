@@ -28,6 +28,7 @@ public class FloatingViewService extends AccessibilityService {
     private WindowManager windowManager;
     private View floatingView;
     private BroadcastReceiver broadcastReceiver;
+    private int coneOfSensitivityAngle = MainActivity.DEFAULT_ANGLE;
 
     @Override
     public void onCreate() {
@@ -38,7 +39,12 @@ public class FloatingViewService extends AccessibilityService {
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                floatingView.setAlpha(getOpacity(intent.getExtras()));
+                Bundle extras = intent.getExtras();
+                if (extras == null) return;
+                floatingView.setAlpha(getOpacity(extras.getInt(MainActivity.OPACITY_SETTING_NAME)));
+                int newAngle = extras.getInt(MainActivity.ANGLE_SETTING_NAME);
+                if (newAngle > 0)
+                    coneOfSensitivityAngle = newAngle;
             }
         };
         LocalBroadcastManager.getInstance(this)
@@ -77,18 +83,14 @@ public class FloatingViewService extends AccessibilityService {
     public void onInterrupt() {
     }
 
-    private float getOpacity(Bundle extras) {
-        int opacity = 0;
-        if (extras != null)
-            opacity = extras.getInt(MainActivity.OPACITY_SETTING_NAME);
+    private float getOpacity(int opacity) {
         opacity = (opacity > 100) ? 100 : ((opacity < 0) ? 0 : opacity);
         return (100 - opacity) / 100.0f;
     }
 
     private float getStoredOpacity() {
         int opacity = Util.getSetting(MainActivity.OPACITY_SETTING_NAME, 0, this);
-        opacity = (opacity > 100) ? 100 : ((opacity < 0) ? 0 : opacity);
-        return (100 - opacity) / 100.0f;
+        return getOpacity(opacity);
     }
 
     private class FloatingViewOnTouchListener implements View.OnTouchListener {
@@ -135,8 +137,7 @@ public class FloatingViewService extends AccessibilityService {
                         if (swipeState.any()) {
                             Log.d(TAG, "swipe detected");
                             onSwipe();
-                        } else
-                            performGlobalAction(GLOBAL_ACTION_BACK);
+                        }
                     } else {
                         Log.d(TAG, "Action up long pressed");
                         longPressed.set(false);
@@ -180,6 +181,7 @@ public class FloatingViewService extends AccessibilityService {
             private boolean swipeDown = false;
             private boolean swipeLeft = false;
             private boolean swipeRight = false;
+            private boolean click = false;
 
             public void swipeUp() {
                 this.swipeUp = true;
@@ -197,8 +199,12 @@ public class FloatingViewService extends AccessibilityService {
                 this.swipeRight = true;
             }
 
+            public void click() {
+                this.click = true;
+            }
+
             public boolean any() {
-                return swipeUp || swipeDown || swipeLeft || swipeRight;
+                return swipeUp || swipeDown || swipeLeft || swipeRight || click;
             }
 
             public void reset() {
@@ -206,11 +212,15 @@ public class FloatingViewService extends AccessibilityService {
                 swipeDown = false;
                 swipeLeft = false;
                 swipeRight = false;
+                click = false;
             }
         }
 
 
         private void onSwipe() {
+            if (swipeState.click) {
+                performGlobalAction(GLOBAL_ACTION_BACK);
+            }
             if (swipeState.swipeUp) {
                 if ("OnePlus".equalsIgnoreCase(Build.MANUFACTURER)) {
                     Intent intent = new Intent();
@@ -245,30 +255,44 @@ public class FloatingViewService extends AccessibilityService {
             float y = event.getRawY();
             if (Math.pow(x - initialTouchX, 2) + Math.pow(y - initialTouchY, 2) <= rad * rad) {
                 Log.d(TAG, "Min threshold is not reached");
-                return false;
+                swipeState.click();
+                return true;
             }
 
-            if (y - initialTouchY >= x - initialTouchX && y - initialTouchY >= -x + initialTouchX) {
+            double slope = getSlope(coneOfSensitivityAngle);
+            if (y - initialTouchY >= slope * (x - initialTouchX)
+                    && y - initialTouchY >= slope * (-x + initialTouchX)) {
                 swipeState.swipeDown();
                 Log.d(TAG, "Swipe down");
                 return true;
             }
-            if (y - initialTouchY > x - initialTouchX && y - initialTouchY < -x + initialTouchX) {
+            if (y - initialTouchY > (x - initialTouchX) / slope
+                    && y - initialTouchY < (-x + initialTouchX) / slope) {
                 swipeState.swipeLeft();
                 Log.d(TAG, "Swipe left");
                 return true;
             }
-            if (y - initialTouchY <= x - initialTouchX && y - initialTouchY <= -x + initialTouchX) {
+            if (y - initialTouchY <= slope * (x - initialTouchX)
+                    && y - initialTouchY <= slope* (-x + initialTouchX)) {
                 swipeState.swipeUp();
                 Log.d(TAG, "Swipe up");
                 return true;
             }
-            if (y - initialTouchY < x - initialTouchX && y - initialTouchY > -x + initialTouchX) {
+            if (y - initialTouchY < (x - initialTouchX) / slope
+                    && y - initialTouchY > (-x + initialTouchX) / slope) {
                 swipeState.swipeRight();
                 Log.d(TAG, "Swipe right");
                 return true;
             }
             return false;
+        }
+
+        private double getSlope(int angleDegree) {
+            if (angleDegree >= 90 || angleDegree <= 0)
+                return 1;
+
+            double a = Math.tan(angleDegree * Math.PI / 180);
+            return  (1 + Math.sqrt(1 + a * a)) / a;
         }
     }
 }

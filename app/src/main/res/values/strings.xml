@@ -5,4 +5,6 @@
     <string name="btn_manage_overlay">Manage overlay settings</string>
     <string name="btn_remove_text">Remove floating button</string>
     <string name="permissions_required">Draw over apps permission required</string>
+    <string name="opacity_picker_title">Floating touch opacity: </string>
+    <string name="angle_spinner_title">Cone of sensitivity: </string>
 </resources>
