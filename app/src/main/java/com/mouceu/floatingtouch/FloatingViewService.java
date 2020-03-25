@@ -92,13 +92,13 @@ public class FloatingViewService extends AccessibilityService {
     }
 
     private class FloatingViewOnTouchListener implements View.OnTouchListener {
+        private static final String TAG = "Gesture";
         private final WindowManager.LayoutParams layoutParams;
         private final Handler handler = new Handler();
         private final Runnable longPressedChecked = new Runnable() {
             @Override
             public void run() {
                 longPressed.set(true);
-                Log.d("TAG", "LongPressed");
             }
         };
         private final SwipeState swipeState = new SwipeState();
@@ -114,11 +114,8 @@ public class FloatingViewService extends AccessibilityService {
             this.layoutParams = layoutParams;
         }
 
-
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-
-
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     initialX = layoutParams.x;
@@ -133,30 +130,42 @@ public class FloatingViewService extends AccessibilityService {
                 case MotionEvent.ACTION_UP:
                     handler.removeCallbacks(longPressedChecked);
                     if (!longPressed.get()) {
+                        Log.d(TAG, "Action up normal");
+                        detectSwipe(event);
                         if (swipeState.any()) {
-                            Log.d("TAG", "swipe detected");
+                            Log.d(TAG, "swipe detected");
                             onSwipe();
                         } else
                             performGlobalAction(GLOBAL_ACTION_BACK);
                     } else {
+                        Log.d(TAG, "Action up long pressed");
                         longPressed.set(false);
+
+                        int x = initialX + (int) (event.getRawX() - initialTouchX);
+                        int y = initialY + (int) (event.getRawY() - initialTouchY);
+                        Util.saveSetting(POSITION_X_KEY, x, FloatingViewService.this);
+                        Util.saveSetting(POSITION_Y_KEY, y, FloatingViewService.this);
                     }
                     break;
                 case MotionEvent.ACTION_MOVE:
+                    int rad = 25;
+                    if (Math.pow(event.getRawX() - initialTouchX, 2)
+                            + Math.pow(event.getRawY() - initialTouchY, 2) <= rad * rad) {
+                        Log.d(TAG, "Min threshold is not reached");
+                        break;
+                    }
                     if (longPressed.get()) {
+                        Log.d(TAG, "Action move long pressed");
 
                         int x = initialX + (int) (event.getRawX() - initialTouchX);
-                        layoutParams.x = x;
                         int y = initialY + (int) (event.getRawY() - initialTouchY);
+                        layoutParams.x = x;
                         layoutParams.y = y;
 
-                        Context ctx = getApplicationContext();
-                        Util.saveSetting(POSITION_X_KEY, x, ctx);
-                        Util.saveSetting(POSITION_Y_KEY, y, ctx);
                         windowManager.updateViewLayout(floatingView, layoutParams);
                     } else {
+                        Log.d(TAG, "Action move normal");
                         handler.removeCallbacks(longPressedChecked);
-                        return detectSwipe(event);
                     }
                     break;
                 default:
@@ -231,24 +240,32 @@ public class FloatingViewService extends AccessibilityService {
         }
 
         private boolean detectSwipe(MotionEvent event) {
-            if (Math.abs(event.getRawX() - initialTouchX) < 15 && (initialTouchY - event.getRawY() > 25)) {
-                swipeState.swipeUp();
-                Log.d("TAG", "swipe up");
-                return true;
+            int rad = 25;
+            float x = event.getRawX();
+            float y = event.getRawY();
+            if (Math.pow(x - initialTouchX, 2) + Math.pow(y - initialTouchY, 2) <= rad * rad) {
+                Log.d(TAG, "Min threshold is not reached");
+                return false;
             }
-            if (Math.abs(event.getRawX() - initialTouchX) < 15 && (event.getRawY() - initialTouchY > 25)) {
+
+            if (y - initialTouchY >= x - initialTouchX && y - initialTouchY >= -x + initialTouchX) {
                 swipeState.swipeDown();
-                Log.d("TAG", "swipe down");
+                Log.d(TAG, "Swipe down");
                 return true;
             }
-            if (Math.abs(event.getRawY() - initialTouchY) < 15 && (event.getRawX() - initialTouchX > 25)) {
-                swipeState.swipeRight();
-                Log.d("TAG", "swipe right");
-                return true;
-            }
-            if (Math.abs(event.getRawY() - initialTouchY) < 15 && (initialTouchX - event.getRawX() > 25)) {
+            if (y - initialTouchY > x - initialTouchX && y - initialTouchY < -x + initialTouchX) {
                 swipeState.swipeLeft();
-                Log.d("TAG", "swipe left");
+                Log.d(TAG, "Swipe left");
+                return true;
+            }
+            if (y - initialTouchY <= x - initialTouchX && y - initialTouchY <= -x + initialTouchX) {
+                swipeState.swipeUp();
+                Log.d(TAG, "Swipe up");
+                return true;
+            }
+            if (y - initialTouchY < x - initialTouchX && y - initialTouchY > -x + initialTouchX) {
+                swipeState.swipeRight();
+                Log.d(TAG, "Swipe right");
                 return true;
             }
             return false;
