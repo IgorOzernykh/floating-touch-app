@@ -1,18 +1,33 @@
 package com.mouceu.floatingtouch;
 
 import android.content.Intent;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import static com.mouceu.floatingtouch.KnownAction.*;
+import static com.mouceu.floatingtouch.KnownSetting.*;
 
 public class MainActivity extends AppCompatActivity {
     private static final int DRAW_OVER_OTHER_APP_PERMISSION_CODE = 2084;
@@ -46,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(accessibilityIntent, ENABLE_ACCESSIBILITY_CODE);
         }
 
+//        initSettingList();
         initAngleSpinner();
         initOpacityPicker();
         initManageAccessibilityButton();
@@ -132,6 +148,66 @@ public class MainActivity extends AppCompatActivity {
                 broadcastManager.sendBroadcast(intent);
             }
         });
+    }
+
+
+
+    private final Map<KnownSetting, Drawable> settingImagesMapping = new HashMap<>();
+    private final Map<KnownSetting, KnownAction> settings = new HashMap<>();
+
+    private void initSettingList() {
+        Drawable arrow = getDrawable(R.drawable.ic_arrow_downward_24dp);
+        Objects.requireNonNull(arrow);
+        List<SettingItem> settingItems = Arrays.asList(
+                new SettingItem(ACTION_LEFT, getStoredAction(ACTION_LEFT, OPEN_RECENT_APPS),
+                        getRotateDrawable(arrow, 90)),
+                new SettingItem(ACTION_UP, getStoredAction(ACTION_UP, OPEN_HOME_SCREEN),
+                        getRotateDrawable(arrow, 180)),
+                new SettingItem(ACTION_RIGHT, getStoredAction(ACTION_RIGHT, OPEN_PREVIOUS_APP),
+                        getRotateDrawable(arrow, 270)),
+                new SettingItem(ACTION_DOWN, getStoredAction(ACTION_DOWN, OPEN_NOTIFICATIONS), arrow)
+        );
+//        settingImagesMapping.put(ACTION_LEFT, getRotateDrawable(arrow, 90));
+//        settingImagesMapping.put(ACTION_UP, getRotateDrawable(arrow, 180));
+//        settingImagesMapping.put(ACTION_RIGHT, getRotateDrawable(arrow, 270));
+//        settingImagesMapping.put(ACTION_DOWN, arrow);
+
+//        settingImagesMapping.put(ACTION_LEFT, arrow);
+//        settingImagesMapping.put(ACTION_UP, arrow);
+//        settingImagesMapping.put(ACTION_RIGHT, arrow);
+//        settingImagesMapping.put(ACTION_DOWN, arrow);
+
+//        settings.put(ACTION_LEFT, getStoredAction(ACTION_LEFT, OPEN_RECENT_APPS));
+//        settings.put(ACTION_UP, getStoredAction(ACTION_UP, OPEN_HOME_SCREEN));
+//        settings.put(ACTION_RIGHT, getStoredAction(ACTION_RIGHT, OPEN_PREVIOUS_APP));
+//        settings.put(ACTION_DOWN, getStoredAction(ACTION_DOWN, OPEN_NOTIFICATIONS));
+
+//        SettingListAdapter adapter = new SettingListAdapter(this, settings, settingImagesMapping);
+        SettingListAdapter adapter = new SettingListAdapter(this, settingItems);
+        ListView settingList = findViewById(R.id.setting_list);
+        settingList.setAdapter(adapter);
+//        adapter.notifyDataSetChanged();
+
+        Log.d("Adapter", String.valueOf(adapter.getCount()));
+//        settingList.setOnClickListener();
+    }
+
+    @NonNull
+    private KnownAction getStoredAction(KnownSetting actionLeft, KnownAction openRecentApps) {
+        return KnownAction.valueOf(Util.getSetting(actionLeft, openRecentApps.name(), this));
+    }
+
+    private Drawable getRotateDrawable(@NonNull final Drawable d, final float angle) {
+        final Drawable[] layers = { d };
+        return new LayerDrawable(layers) {
+            @Override
+            public void draw(final Canvas canvas) {
+                canvas.save();
+                canvas.rotate(angle, d.getBounds().width() / 2, d.getBounds().height() / 2);
+                super.draw(canvas);
+                canvas.restore();
+            }
+        };
     }
 
     private void initManageAccessibilityButton() {

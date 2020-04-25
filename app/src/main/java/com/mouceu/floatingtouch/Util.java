@@ -26,6 +26,10 @@ class Util {
         return false;
     }
 
+    static  <T> void saveSetting(Enum<?> key, T value, Context context) {
+        saveSetting(key.name(), value, context);
+    }
+
     static  <T> void saveSetting(String key, T value, Context context) {
         final SharedPreferences preferences = getSharedPreferences(context);
         final SharedPreferences.Editor editor = preferences.edit();
@@ -36,6 +40,10 @@ class Util {
         else
             editor.putString(key, String.valueOf(value));
         editor.apply();
+    }
+
+    static <T> T getSetting(Enum<?> key, T defaultValue, Context context) {
+        return getSetting(key.name(), defaultValue, context);
     }
 
     static <T> T getSetting(String key, T defaultValue, Context context) {

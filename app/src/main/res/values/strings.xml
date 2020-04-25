@@ -7,4 +7,12 @@
     <string name="permissions_required">Draw over apps permission required</string>
     <string name="opacity_picker_title">Floating touch opacity: </string>
     <string name="angle_spinner_title">Cone of sensitivity: </string>
+    <string name="setting_slide_left">Slide left</string>
+    <string name="setting_slide_up">Slide up</string>
+    <string name="setting_slide_right">Slide right</string>
+    <string name="setting_slide_down">Slide down</string>
+    <string name="action_open_notifications">Open notifications</string>
+    <string name="action_open_recent_apps">Open recent apps</string>
+    <string name="action_open_home_screen">Back to Home screen</string>
+    <string name="action_open_previous_app">Back to previous app</string>
 </resources>
