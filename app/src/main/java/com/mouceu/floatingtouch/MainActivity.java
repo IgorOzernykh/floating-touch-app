@@ -87,7 +87,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 Integer selectedAngle = adapter.getItem(position);
-                if (selectedAngle == null) selectedAngle = DEFAULT_ANGLE;
+                if (selectedAngle == null) {
+                    selectedAngle = DEFAULT_ANGLE;
+                }
                 Util.saveSetting(ANGLE_SETTING_NAME, selectedAngle, MainActivity.this);
                 Bundle bundle = new Bundle();
                 bundle.putInt(ANGLE_SETTING_NAME, selectedAngle);
@@ -98,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-
             }
         });
     }

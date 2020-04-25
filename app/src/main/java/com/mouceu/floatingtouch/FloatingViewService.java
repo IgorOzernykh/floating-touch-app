@@ -41,10 +41,14 @@ public class FloatingViewService extends AccessibilityService {
             public void onReceive(Context context, Intent intent) {
                 Bundle extras = intent.getExtras();
                 if (extras == null) return;
-                floatingView.setAlpha(getOpacity(extras.getInt(MainActivity.OPACITY_SETTING_NAME)));
-                int newAngle = extras.getInt(MainActivity.ANGLE_SETTING_NAME);
-                if (newAngle > 0)
-                    coneOfSensitivityAngle = newAngle;
+                if (extras.containsKey(MainActivity.OPACITY_SETTING_NAME)) {
+                    floatingView.setAlpha(getOpacity(extras.getInt(MainActivity.OPACITY_SETTING_NAME)));
+                }
+                if (extras.containsKey(MainActivity.ANGLE_SETTING_NAME)) {
+                    int newAngle = extras.getInt(MainActivity.ANGLE_SETTING_NAME);
+                    if (newAngle > 0)
+                        coneOfSensitivityAngle = newAngle;
+                }
             }
         };
         LocalBroadcastManager.getInstance(this)
@@ -273,7 +277,7 @@ public class FloatingViewService extends AccessibilityService {
                 return true;
             }
             if (y - initialTouchY <= slope * (x - initialTouchX)
-                    && y - initialTouchY <= slope* (-x + initialTouchX)) {
+                    && y - initialTouchY <= slope * (-x + initialTouchX)) {
                 swipeState.swipeUp();
                 Log.d(TAG, "Swipe up");
                 return true;
