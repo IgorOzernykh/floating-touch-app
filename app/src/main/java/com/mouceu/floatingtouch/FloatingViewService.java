@@ -29,26 +29,26 @@ public class FloatingViewService extends AccessibilityService {
     private View floatingView;
     private BroadcastReceiver broadcastReceiver;
     private int coneOfSensitivityAngle = MainActivity.DEFAULT_ANGLE;
+    private volatile SlideAction actionLeft;
+    private volatile SlideAction actionUp;
+    private volatile SlideAction actionRight;
+    private volatile SlideAction actionDown;
 
     @Override
     public void onCreate() {
         super.onCreate();
         floatingView = LayoutInflater.from(this).inflate(R.layout.floating_touch, null);
         floatingView.setAlpha(getStoredOpacity());
+        actionLeft = Util.getStoredAction(AppSetting.ACTION_LEFT, SlideAction.OPEN_RECENT_APPS, this);
+        actionUp = Util.getStoredAction(AppSetting.ACTION_UP, SlideAction.OPEN_HOME_SCREEN, this);
+        actionRight = Util.getStoredAction(AppSetting.ACTION_RIGHT, SlideAction.OPEN_PREVIOUS_APP, this);
+        actionDown = Util.getStoredAction(AppSetting.ACTION_DOWN, SlideAction.OPEN_NOTIFICATIONS, this);
+        coneOfSensitivityAngle = Integer.parseInt(Util.getSetting(AppSetting.SENSITIVITY_ANGLE.name(), String.valueOf(MainActivity.DEFAULT_ANGLE), this));
 
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Bundle extras = intent.getExtras();
-                if (extras == null) return;
-                if (extras.containsKey(MainActivity.OPACITY_SETTING_NAME)) {
-                    floatingView.setAlpha(getOpacity(extras.getInt(MainActivity.OPACITY_SETTING_NAME)));
-                }
-                if (extras.containsKey(MainActivity.ANGLE_SETTING_NAME)) {
-                    int newAngle = extras.getInt(MainActivity.ANGLE_SETTING_NAME);
-                    if (newAngle > 0)
-                        coneOfSensitivityAngle = newAngle;
-                }
+                updateSettings(intent);
             }
         };
         LocalBroadcastManager.getInstance(this)
@@ -87,13 +87,41 @@ public class FloatingViewService extends AccessibilityService {
     public void onInterrupt() {
     }
 
+    private void updateSettings(Intent intent) {
+        Bundle extras = intent.getExtras();
+        if (extras == null) return;
+        if (extras.containsKey(AppSetting.OPACITY.name())) {
+            floatingView.setAlpha(getOpacity(extras.getInt(AppSetting.OPACITY.name())));
+        }
+        if (extras.containsKey(AppSetting.SENSITIVITY_ANGLE.name())) {
+            String newAngleStr = extras.getString(AppSetting.SENSITIVITY_ANGLE.name());
+            if (newAngleStr != null) {
+                int newAngle = Integer.parseInt(newAngleStr);
+                if (newAngle > 0)
+                    coneOfSensitivityAngle = newAngle;
+            }
+        }
+        if (extras.containsKey(AppSetting.ACTION_LEFT.name())) {
+            actionLeft = SlideAction.valueOf(extras.getString(AppSetting.ACTION_LEFT.name()));
+        }
+        if (extras.containsKey(AppSetting.ACTION_UP.name())) {
+            actionUp = SlideAction.valueOf(extras.getString(AppSetting.ACTION_UP.name()));
+        }
+        if (extras.containsKey(AppSetting.ACTION_RIGHT.name())) {
+            actionRight = SlideAction.valueOf(extras.getString(AppSetting.ACTION_RIGHT.name()));
+        }
+        if (extras.containsKey(AppSetting.ACTION_DOWN.name())) {
+            actionDown = SlideAction.valueOf(extras.getString(AppSetting.ACTION_DOWN.name()));
+        }
+    }
+
     private float getOpacity(int opacity) {
         opacity = (opacity > 100) ? 100 : ((opacity < 0) ? 0 : opacity);
         return (100 - opacity) / 100.0f;
     }
 
     private float getStoredOpacity() {
-        int opacity = Util.getSetting(MainActivity.OPACITY_SETTING_NAME, 0, this);
+        int opacity = Util.getSetting(AppSetting.OPACITY.name(), 0, this);
         return getOpacity(opacity);
     }
 
@@ -220,37 +248,51 @@ public class FloatingViewService extends AccessibilityService {
             }
         }
 
-
         private void onSwipe() {
             if (swipeState.click) {
                 performGlobalAction(GLOBAL_ACTION_BACK);
             }
-            if (swipeState.swipeUp) {
-                if ("OnePlus".equalsIgnoreCase(Build.MANUFACTURER)) {
-                    Intent intent = new Intent();
-                    intent.setAction(Intent.ACTION_MAIN);
-                    intent.addCategory(Intent.CATEGORY_HOME);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent);
-                } else {
-                    performGlobalAction(GLOBAL_ACTION_HOME);
+
+            SlideAction action = null;
+            if (swipeState.swipeLeft) {
+                action = actionLeft;
+            } else if (swipeState.swipeUp ) {
+                action = actionUp;
+            } else if (swipeState.swipeRight) {
+                action = actionRight;
+            } else if (swipeState.swipeDown) {
+                action = actionDown;
+            }
+            swipeState.reset();
+
+            if (action != null) {
+                switch (action) {
+                    case OPEN_HOME_SCREEN:
+                        if ("OnePlus".equalsIgnoreCase(Build.MANUFACTURER)) {
+                            Intent intent = new Intent();
+                            intent.setAction(Intent.ACTION_MAIN);
+                            intent.addCategory(Intent.CATEGORY_HOME);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                        } else {
+                            performGlobalAction(GLOBAL_ACTION_HOME);
+                        }
+                        break;
+                    case OPEN_NOTIFICATIONS:
+                        performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS);
+                        break;
+                    case OPEN_PREVIOUS_APP:
+                        performGlobalAction(GLOBAL_ACTION_RECENTS);
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                performGlobalAction(GLOBAL_ACTION_RECENTS);
+                            }
+                        }, 50);
+                    case OPEN_RECENT_APPS:
+                        performGlobalAction(GLOBAL_ACTION_RECENTS);
                 }
             }
-            if (swipeState.swipeDown)
-                performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS);
-            if (swipeState.swipeRight) {
-                performGlobalAction(GLOBAL_ACTION_RECENTS);
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        performGlobalAction(GLOBAL_ACTION_RECENTS);
-                    }
-                }, 50);
-
-            }
-            if (swipeState.swipeLeft)
-                performGlobalAction(GLOBAL_ACTION_RECENTS);
-            swipeState.reset();
         }
 
         private boolean detectSwipe(MotionEvent event) {

@@ -12,14 +12,12 @@ import android.widget.TextView;
 
 import java.util.List;
 
-public class SettingListAdapter extends ArrayAdapter<SettingItem> {
-    private final List<SettingItem> items;
+class SettingListAdapter extends ArrayAdapter<SettingItem> {
     private Activity context;
 
     public SettingListAdapter(Activity context, List<SettingItem> items) {
         super(context, R.layout.setting_list, items);
         this.context = context;
-        this.items = items;
     }
 
     @NonNull

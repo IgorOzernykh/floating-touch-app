@@ -5,8 +5,8 @@
     <string name="btn_manage_overlay">Manage overlay settings</string>
     <string name="btn_remove_text">Remove floating button</string>
     <string name="permissions_required">Draw over apps permission required</string>
-    <string name="opacity_picker_title">Floating touch opacity: </string>
-    <string name="angle_spinner_title">Cone of sensitivity: </string>
+    <string name="opacity_picker_title">Opacity</string>
+    <string name="angle_spinner_title">Cone of sensitivity</string>
     <string name="setting_slide_left">Slide left</string>
     <string name="setting_slide_up">Slide up</string>
     <string name="setting_slide_right">Slide right</string>
@@ -15,4 +15,5 @@
     <string name="action_open_recent_apps">Open recent apps</string>
     <string name="action_open_home_screen">Back to Home screen</string>
     <string name="action_open_previous_app">Back to previous app</string>
+    <string name="action_selection_dialog_title">Select action</string>
 </resources>

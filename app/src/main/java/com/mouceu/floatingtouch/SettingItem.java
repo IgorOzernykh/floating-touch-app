@@ -2,23 +2,23 @@ package com.mouceu.floatingtouch;
 
 import android.graphics.drawable.Drawable;
 
-public class SettingItem {
-    private final KnownSetting name;
+class SettingItem {
+    private final AppSetting name;
     private final Drawable image;
     private String value;
 
-    public SettingItem(KnownSetting name, Drawable image) {
+    public SettingItem(AppSetting name, Drawable image) {
         this.name = name;
         this.image = image;
     }
 
-    public SettingItem(KnownSetting name, String value, Drawable image) {
+    public SettingItem(AppSetting name, String value, Drawable image) {
         this.name = name;
         this.value = value;
         this.image = image;
     }
 
-    public KnownSetting getName() {
+    public AppSetting getName() {
         return name;
     }
 
