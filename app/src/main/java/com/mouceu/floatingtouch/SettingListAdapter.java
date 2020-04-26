@@ -39,7 +39,7 @@ public class SettingListAdapter extends ArrayAdapter<SettingItem> {
 
             settingIconView.setImageDrawable(item.getImage());
             settingNameView.setText(item.getName().resolve(context));
-            settingValueView.setText(item.getValue().resolve(context));
+            settingValueView.setText(item.getValue());
         }
         return rowView;
     }

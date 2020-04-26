@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(accessibilityIntent, ENABLE_ACCESSIBILITY_CODE);
         }
 
-//        initSettingList();
+        initSettingList();
         initAngleSpinner();
         initOpacityPicker();
         initManageAccessibilityButton();
@@ -156,16 +156,18 @@ public class MainActivity extends AppCompatActivity {
     private final Map<KnownSetting, KnownAction> settings = new HashMap<>();
 
     private void initSettingList() {
-        Drawable arrow = getDrawable(R.drawable.ic_arrow_downward_24dp);
-        Objects.requireNonNull(arrow);
+        Drawable arrowIcon = getDrawable(R.drawable.ic_arrow_downward_24dp);
+        Drawable sensitivityIcon = getDrawable(R.drawable.ic_sensitivity_angle_24dp);
+        Objects.requireNonNull(arrowIcon);
         List<SettingItem> settingItems = Arrays.asList(
-                new SettingItem(ACTION_LEFT, getStoredAction(ACTION_LEFT, OPEN_RECENT_APPS),
-                        getRotateDrawable(arrow, 90)),
-                new SettingItem(ACTION_UP, getStoredAction(ACTION_UP, OPEN_HOME_SCREEN),
-                        getRotateDrawable(arrow, 180)),
-                new SettingItem(ACTION_RIGHT, getStoredAction(ACTION_RIGHT, OPEN_PREVIOUS_APP),
-                        getRotateDrawable(arrow, 270)),
-                new SettingItem(ACTION_DOWN, getStoredAction(ACTION_DOWN, OPEN_NOTIFICATIONS), arrow)
+                new SettingItem(ACTION_LEFT, getStoredAction(ACTION_LEFT, OPEN_RECENT_APPS).resolve(this),
+                        getRotateDrawable(arrowIcon, 90)),
+                new SettingItem(ACTION_UP, getStoredAction(ACTION_UP, OPEN_HOME_SCREEN).resolve(this),
+                        getRotateDrawable(arrowIcon, 180)),
+                new SettingItem(ACTION_RIGHT, getStoredAction(ACTION_RIGHT, OPEN_PREVIOUS_APP).resolve(this),
+                        getRotateDrawable(arrowIcon, 270)),
+                new SettingItem(ACTION_DOWN, getStoredAction(ACTION_DOWN, OPEN_NOTIFICATIONS).resolve(this), arrowIcon),
+                new SettingItem(SENSITIVITY_ANGLE, Util.getSetting(SENSITIVITY_ANGLE.name(), String.valueOf(DEFAULT_ANGLE), this), sensitivityIcon)
         );
 //        settingImagesMapping.put(ACTION_LEFT, getRotateDrawable(arrow, 90));
 //        settingImagesMapping.put(ACTION_UP, getRotateDrawable(arrow, 180));
@@ -193,8 +195,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @NonNull
-    private KnownAction getStoredAction(KnownSetting actionLeft, KnownAction openRecentApps) {
-        return KnownAction.valueOf(Util.getSetting(actionLeft, openRecentApps.name(), this));
+    private KnownAction getStoredAction(KnownSetting setting, KnownAction action) {
+        return KnownAction.valueOf(Util.getSetting(setting, action.name(), this));
     }
 
     private Drawable getRotateDrawable(@NonNull final Drawable d, final float angle) {

@@ -5,14 +5,14 @@ import android.graphics.drawable.Drawable;
 public class SettingItem {
     private final KnownSetting name;
     private final Drawable image;
-    private KnownAction value;
+    private String value;
 
     public SettingItem(KnownSetting name, Drawable image) {
         this.name = name;
         this.image = image;
     }
 
-    public SettingItem(KnownSetting name, KnownAction value, Drawable image) {
+    public SettingItem(KnownSetting name, String value, Drawable image) {
         this.name = name;
         this.value = value;
         this.image = image;
@@ -22,11 +22,11 @@ public class SettingItem {
         return name;
     }
 
-    public KnownAction getValue() {
+    public String getValue() {
         return value;
     }
 
-    public void setValue(KnownAction value) {
+    public void setValue(String value) {
         this.value = value;
     }
 

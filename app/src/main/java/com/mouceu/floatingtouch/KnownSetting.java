@@ -6,7 +6,9 @@ enum KnownSetting {
     ACTION_LEFT(R.string.setting_slide_left),
     ACTION_UP(R.string.setting_slide_up),
     ACTION_RIGHT(R.string.setting_slide_right),
-    ACTION_DOWN(R.string.setting_slide_down);
+    ACTION_DOWN(R.string.setting_slide_down),
+    SENSITIVITY_ANGLE(R.string.angle_spinner_title)
+    ;
 
     private final int resourceId;
 
