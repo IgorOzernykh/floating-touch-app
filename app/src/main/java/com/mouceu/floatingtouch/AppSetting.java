@@ -7,6 +7,7 @@ enum AppSetting {
     ACTION_UP(R.string.setting_slide_up),
     ACTION_RIGHT(R.string.setting_slide_right),
     ACTION_DOWN(R.string.setting_slide_down),
+    ACTION_TOUCH(R.string.setting_touch),
     SENSITIVITY_ANGLE(R.string.angle_spinner_title),
     OPACITY(R.string.opacity_picker_title)
     ;

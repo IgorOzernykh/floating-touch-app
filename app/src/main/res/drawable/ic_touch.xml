@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24.0"
+    android:viewportHeight="24.0"
+    android:shape="oval">
+    <solid
+        android:color="#ABABAB"/>
+
+    <stroke
+        android:color="#CDCDCD"
+        android:width="4dp"/>
+
+    <size
+        android:width="24dp"
+        android:height="24dp"/>
+</shape>

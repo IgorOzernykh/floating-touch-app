@@ -121,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
     private void initSettingList() {
         Drawable arrowIcon = getDrawable(R.drawable.ic_arrow_downward_24dp);
         Drawable sensitivityIcon = getDrawable(R.drawable.ic_sensitivity_angle_24dp);
+        Drawable touchIcon = getDrawable(R.drawable.ic_touch);
         Objects.requireNonNull(arrowIcon);
         final List<SettingItem> settingItems = Arrays.asList(
                 new SettingItem(ACTION_LEFT,
@@ -135,6 +136,9 @@ public class MainActivity extends AppCompatActivity {
                 new SettingItem(ACTION_DOWN,
                         Util.getStoredAction(ACTION_DOWN, OPEN_NOTIFICATIONS, this).resolve(this),
                         arrowIcon),
+                new SettingItem(ACTION_TOUCH,
+                        Util.getStoredAction(ACTION_TOUCH, GO_BACK, this).resolve(this),
+                        touchIcon),
                 new SettingItem(SENSITIVITY_ANGLE,
                         Util.getSetting(SENSITIVITY_ANGLE.name(), String.valueOf(DEFAULT_ANGLE), this),
                         sensitivityIcon)
@@ -158,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
                     case ACTION_DOWN:
                     case ACTION_LEFT:
                     case ACTION_RIGHT:
+                    case ACTION_TOUCH:
                         builder
                                 .setTitle(clickedItem.getName().resolve(MainActivity.this))
                                 .setItems(actions, new DialogInterface.OnClickListener() {

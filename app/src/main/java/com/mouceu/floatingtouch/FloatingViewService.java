@@ -33,6 +33,7 @@ public class FloatingViewService extends AccessibilityService {
     private volatile SlideAction actionUp;
     private volatile SlideAction actionRight;
     private volatile SlideAction actionDown;
+    private volatile SlideAction actionTouch;
 
     @Override
     public void onCreate() {
@@ -43,6 +44,7 @@ public class FloatingViewService extends AccessibilityService {
         actionUp = Util.getStoredAction(AppSetting.ACTION_UP, SlideAction.OPEN_HOME_SCREEN, this);
         actionRight = Util.getStoredAction(AppSetting.ACTION_RIGHT, SlideAction.OPEN_PREVIOUS_APP, this);
         actionDown = Util.getStoredAction(AppSetting.ACTION_DOWN, SlideAction.OPEN_NOTIFICATIONS, this);
+        actionTouch = Util.getStoredAction(AppSetting.ACTION_TOUCH, SlideAction.GO_BACK, this);
         coneOfSensitivityAngle = Integer.parseInt(Util.getSetting(AppSetting.SENSITIVITY_ANGLE.name(), String.valueOf(MainActivity.DEFAULT_ANGLE), this));
 
         broadcastReceiver = new BroadcastReceiver() {
@@ -112,6 +114,9 @@ public class FloatingViewService extends AccessibilityService {
         }
         if (extras.containsKey(AppSetting.ACTION_DOWN.name())) {
             actionDown = SlideAction.valueOf(extras.getString(AppSetting.ACTION_DOWN.name()));
+        }
+        if (extras.containsKey(AppSetting.ACTION_TOUCH.name())) {
+            actionTouch = SlideAction.valueOf(extras.getString(AppSetting.ACTION_TOUCH.name()));
         }
     }
 
@@ -249,12 +254,10 @@ public class FloatingViewService extends AccessibilityService {
         }
 
         private void onSwipe() {
-            if (swipeState.click) {
-                performGlobalAction(GLOBAL_ACTION_BACK);
-            }
-
             SlideAction action = null;
-            if (swipeState.swipeLeft) {
+            if (swipeState.click) {
+                action = actionTouch;
+            } else if (swipeState.swipeLeft) {
                 action = actionLeft;
             } else if (swipeState.swipeUp ) {
                 action = actionUp;
@@ -267,6 +270,9 @@ public class FloatingViewService extends AccessibilityService {
 
             if (action != null) {
                 switch (action) {
+                    case GO_BACK:
+                        performGlobalAction(GLOBAL_ACTION_BACK);
+                        break;
                     case OPEN_HOME_SCREEN:
                         if ("OnePlus".equalsIgnoreCase(Build.MANUFACTURER)) {
                             Intent intent = new Intent();
@@ -289,8 +295,10 @@ public class FloatingViewService extends AccessibilityService {
                                 performGlobalAction(GLOBAL_ACTION_RECENTS);
                             }
                         }, 50);
+                        break;
                     case OPEN_RECENT_APPS:
                         performGlobalAction(GLOBAL_ACTION_RECENTS);
+                        break;
                 }
             }
         }

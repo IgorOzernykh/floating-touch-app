@@ -11,9 +11,11 @@
     <string name="setting_slide_up">Slide up</string>
     <string name="setting_slide_right">Slide right</string>
     <string name="setting_slide_down">Slide down</string>
+    <string name="setting_touch">Touch</string>
     <string name="action_open_notifications">Open notifications</string>
     <string name="action_open_recent_apps">Open recent apps</string>
     <string name="action_open_home_screen">Back to Home screen</string>
     <string name="action_open_previous_app">Back to previous app</string>
+    <string name="action_go_back">Back to previous screen</string>
     <string name="action_selection_dialog_title">Select action</string>
 </resources>
