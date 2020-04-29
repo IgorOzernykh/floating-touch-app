@@ -20,7 +20,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.mouceu.floatingtouch.SlideAction.*;
@@ -34,10 +36,6 @@ public class MainActivity extends AppCompatActivity {
     static final int DEFAULT_OPACITY = 0;
     static final int DEFAULT_TOUCH_AREA_SIZE = 25;
 
-    private int selectedOpacity;
-    private int selectedTouchAreaSize;
-    private TextView opacityPickerValue;
-    private TextView touchAreaSizePickerValue;
     private LocalBroadcastManager broadcastManager;
 
     @Override
@@ -91,19 +89,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initOpacityPicker() {
-        SeekBar opacityPicker = findViewById(R.id.opacity_picker);
-        opacityPickerValue = findViewById(R.id.opacity_picker_title);
+        final SeekBar opacityPicker = findViewById(R.id.opacity_picker);
+        final TextView opacityPickerValue = findViewById(R.id.opacity_picker_title);
         final String opacityPickerTitle = getString(R.string.opacity_picker_title) + ": %d";
-        selectedOpacity = Util.getSetting(OPACITY.name(), DEFAULT_OPACITY, MainActivity.this);
-        opacityPickerValue.setText(String.format(opacityPickerTitle, selectedOpacity));
-        opacityPicker.setProgress(selectedOpacity);
+        int opacity = Util.getSetting(OPACITY.name(), DEFAULT_OPACITY, MainActivity.this);
+        opacityPickerValue.setText(String.format(opacityPickerTitle, opacity));
+        opacityPicker.setProgress(opacity);
 
         opacityPicker.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                selectedOpacity = seekBar.getProgress();
-
-                opacityPickerValue.setText(String.format(opacityPickerTitle, selectedOpacity));
+                int opacity = seekBar.getProgress();
+                opacityPickerValue.setText(String.format(opacityPickerTitle, opacity));
             }
 
             @Override
@@ -112,31 +109,27 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                Util.saveSetting(OPACITY.name(), selectedOpacity, MainActivity.this);
-                Bundle bundle = new Bundle();
-                bundle.putInt(OPACITY.name(), selectedOpacity);
-                Intent intent = new Intent(SERVICE_PARAMS);
-                intent.putExtras(bundle);
-                broadcastManager.sendBroadcast(intent);
+                int opacity = seekBar.getProgress();
+                Util.saveSetting(OPACITY.name(), opacity, MainActivity.this);
+                notifySettingChanged(OPACITY.name(), opacity);
             }
         });
     }
 
+
+
     private void initTouchAreaPicker() {
         SeekBar areaPicker = findViewById(R.id.touch_area_size_picker);
-        touchAreaSizePickerValue = findViewById(R.id.touch_area_size_picker_title);
-
+        final TextView touchAreaSizePickerValue = findViewById(R.id.touch_area_size_picker_title);
         final String title = getString(R.string.touch_area_size) + ": %d";
-        selectedTouchAreaSize = Util.getSetting(TOUCH_AREA.name(), DEFAULT_TOUCH_AREA_SIZE, MainActivity.this);
-        touchAreaSizePickerValue.setText(String.format(title, selectedTouchAreaSize));
-        areaPicker.setProgress(selectedTouchAreaSize);
+        int touchArea = Util.getSetting(TOUCH_AREA.name(), DEFAULT_TOUCH_AREA_SIZE, MainActivity.this);
+        touchAreaSizePickerValue.setText(String.format(title, touchArea));
+        areaPicker.setProgress(touchArea);
 
         areaPicker.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                selectedTouchAreaSize = seekBar.getProgress();
-
-                touchAreaSizePickerValue.setText(String.format(title, selectedTouchAreaSize));
+                touchAreaSizePickerValue.setText(String.format(title, seekBar.getProgress()));
             }
 
             @Override
@@ -145,38 +138,43 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                Util.saveSetting(TOUCH_AREA.name(), selectedTouchAreaSize, MainActivity.this);
-                Bundle bundle = new Bundle();
-                bundle.putInt(TOUCH_AREA.name(), selectedTouchAreaSize);
-                Intent intent = new Intent(SERVICE_PARAMS);
-                intent.putExtras(bundle);
-                broadcastManager.sendBroadcast(intent);
+                int touchArea = seekBar.getProgress();
+                Util.saveSetting(TOUCH_AREA.name(), touchArea, MainActivity.this);
+                notifySettingChanged(TOUCH_AREA.name(), touchArea);
             }
         });
     }
 
     private void initSettingList() {
+        final Map<AppSetting, String> settingTitles = getSettingTitles();
+        final Map<SlideAction, String> actionTitles = getActionTitles();
         Drawable arrowIcon = getDrawable(R.drawable.ic_arrow_downward_24dp);
         Drawable sensitivityIcon = getDrawable(R.drawable.ic_sensitivity_angle_24dp);
         Drawable touchIcon = getDrawable(R.drawable.ic_touch);
         Objects.requireNonNull(arrowIcon);
         final List<SettingItem> settingItems = Arrays.asList(
                 new SettingItem(ACTION_LEFT,
-                        Util.getStoredAction(ACTION_LEFT, OPEN_RECENT_APPS, this).resolve(this),
+                        settingTitles.get(ACTION_LEFT),
+                        actionTitles.get(Util.getStoredAction(ACTION_LEFT, OPEN_RECENT_APPS, this)),
                         getRotateDrawable(arrowIcon, 90)),
                 new SettingItem(ACTION_UP,
-                        Util.getStoredAction(ACTION_UP, OPEN_HOME_SCREEN, this).resolve(this),
+                        settingTitles.get(ACTION_UP),
+                        actionTitles.get(Util.getStoredAction(ACTION_UP, OPEN_HOME_SCREEN, this)),
                         getRotateDrawable(arrowIcon, 180)),
                 new SettingItem(ACTION_RIGHT,
-                        Util.getStoredAction(ACTION_RIGHT, OPEN_PREVIOUS_APP, this).resolve(this),
+                        settingTitles.get(ACTION_RIGHT),
+                        actionTitles.get(Util.getStoredAction(ACTION_RIGHT, OPEN_PREVIOUS_APP, this)),
                         getRotateDrawable(arrowIcon, 270)),
                 new SettingItem(ACTION_DOWN,
-                        Util.getStoredAction(ACTION_DOWN, OPEN_NOTIFICATIONS, this).resolve(this),
+                        settingTitles.get(ACTION_DOWN),
+                        actionTitles.get(Util.getStoredAction(ACTION_DOWN, OPEN_NOTIFICATIONS, this)),
                         arrowIcon),
                 new SettingItem(ACTION_TOUCH,
-                        Util.getStoredAction(ACTION_TOUCH, GO_BACK, this).resolve(this),
+                        settingTitles.get(ACTION_TOUCH),
+                        actionTitles.get(Util.getStoredAction(ACTION_TOUCH, GO_BACK, this)),
                         touchIcon),
                 new SettingItem(SENSITIVITY_ANGLE,
+                        settingTitles.get(SENSITIVITY_ANGLE),
                         Util.getSetting(SENSITIVITY_ANGLE.name(), String.valueOf(DEFAULT_ANGLE), this),
                         sensitivityIcon)
         );
@@ -186,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
         settingList.setAdapter(adapter);
 
         final String[] angleValues = getResources().getStringArray(R.array.sensitivity_angle_values);
-        final String[] actions = SlideAction.getResolvedValues(this);
+        final String[] actions = actionTitles.values().toArray(new String[0]);
         settingList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, final View view, final int position, long id) {
@@ -201,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
                     case ACTION_RIGHT:
                     case ACTION_TOUCH:
                         builder
-                                .setTitle(clickedItem.getName().resolve(MainActivity.this))
+                                .setTitle(settingTitles.get(clickedItem.getName()))
                                 .setItems(actions, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
@@ -209,12 +207,7 @@ public class MainActivity extends AppCompatActivity {
                                         Util.saveSetting(clickedItem.getName().name(), action.name(), MainActivity.this);
                                         clickedItem.setValue(actions[which]);
                                         adapter.notifyDataSetChanged();
-
-                                        Bundle bundle = new Bundle();
-                                        bundle.putString(clickedItem.getName().name(), action.name());
-                                        Intent intent = new Intent(SERVICE_PARAMS);
-                                        intent.putExtras(bundle);
-                                        broadcastManager.sendBroadcast(intent);
+                                        notifySettingChanged(clickedItem.getName().name(), action.name());
                                     }
                                 });
                         break;
@@ -226,15 +219,10 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
                                         final String angleValue = angleValues[which];
-                                        Util.saveSetting(SENSITIVITY_ANGLE.name(), angleValue, MainActivity.this);
+                                        Util.saveSetting(clickedItem.getName().name(), angleValue, MainActivity.this);
                                         clickedItem.setValue(angleValue);
                                         adapter.notifyDataSetChanged();
-
-                                        Bundle bundle = new Bundle();
-                                        bundle.putString(SENSITIVITY_ANGLE.name(), angleValue);
-                                        Intent intent = new Intent(SERVICE_PARAMS);
-                                        intent.putExtras(bundle);
-                                        broadcastManager.sendBroadcast(intent);
+                                        notifySettingChanged(clickedItem.getName().name(), angleValue);
                                     }
                                 });
                         break;
@@ -242,6 +230,29 @@ public class MainActivity extends AppCompatActivity {
                 builder.show();
             }
         });
+    }
+
+    @NonNull
+    private Map<AppSetting, String> getSettingTitles() {
+        final Map<AppSetting, String> settingTitles = new EnumMap<>(AppSetting.class);
+        settingTitles.put(ACTION_LEFT, getString(R.string.setting_slide_left));
+        settingTitles.put(ACTION_UP, getString(R.string.setting_slide_up));
+        settingTitles.put(ACTION_RIGHT, getString(R.string.setting_slide_right));
+        settingTitles.put(ACTION_DOWN, getString(R.string.setting_slide_down));
+        settingTitles.put(ACTION_TOUCH, getString(R.string.setting_touch));
+        settingTitles.put(SENSITIVITY_ANGLE, getString(R.string.angle_spinner_title));
+        return settingTitles;
+    }
+
+    @NonNull
+    private Map<SlideAction, String> getActionTitles() {
+        final Map<SlideAction, String> actionTitles = new EnumMap<>(SlideAction.class);
+        actionTitles.put(OPEN_RECENT_APPS, getString(R.string.action_open_recent_apps));
+        actionTitles.put(OPEN_NOTIFICATIONS, getString(R.string.action_open_notifications));
+        actionTitles.put(OPEN_HOME_SCREEN, getString(R.string.action_open_home_screen));
+        actionTitles.put(OPEN_PREVIOUS_APP, getString(R.string.action_open_previous_app));
+        actionTitles.put(GO_BACK, getString(R.string.action_go_back));
+        return actionTitles;
     }
 
     private Drawable getRotateDrawable(@NonNull final Drawable d, final float angle) {
@@ -255,6 +266,20 @@ public class MainActivity extends AppCompatActivity {
                 canvas.restore();
             }
         };
+    }
+
+    private <T> void notifySettingChanged(String key, @NonNull T value) {
+        Bundle bundle = new Bundle();
+        @SuppressWarnings("unchecked")
+        final Class<T> valueType = (Class<T>) value.getClass();
+        if (valueType == int.class || valueType == Integer.class) {
+            bundle.putInt(key, (Integer) value);
+        } else {
+            bundle.putString(key, value.toString());
+        }
+        Intent intent = new Intent(SERVICE_PARAMS);
+        intent.putExtras(bundle);
+        broadcastManager.sendBroadcast(intent);
     }
 
     private void initManageAccessibilityButton() {
