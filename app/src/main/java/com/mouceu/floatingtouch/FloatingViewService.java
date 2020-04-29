@@ -32,11 +32,12 @@ public class FloatingViewService extends AccessibilityService {
     private View floatingView;
     private BroadcastReceiver broadcastReceiver;
     private int coneOfSensitivityAngle = MainActivity.DEFAULT_ANGLE;
-    private volatile SlideAction actionLeft;
-    private volatile SlideAction actionUp;
-    private volatile SlideAction actionRight;
-    private volatile SlideAction actionDown;
-    private volatile SlideAction actionTouch;
+    private int touchAreaSize = MainActivity.DEFAULT_TOUCH_AREA_SIZE;
+    private SlideAction actionLeft;
+    private SlideAction actionUp;
+    private SlideAction actionRight;
+    private SlideAction actionDown;
+    private SlideAction actionTouch;
 
     @Override
     public void onCreate() {
@@ -49,6 +50,7 @@ public class FloatingViewService extends AccessibilityService {
         actionDown = Util.getStoredAction(AppSetting.ACTION_DOWN, SlideAction.OPEN_NOTIFICATIONS, this);
         actionTouch = Util.getStoredAction(AppSetting.ACTION_TOUCH, SlideAction.GO_BACK, this);
         coneOfSensitivityAngle = Integer.parseInt(Util.getSetting(AppSetting.SENSITIVITY_ANGLE.name(), String.valueOf(MainActivity.DEFAULT_ANGLE), this));
+        touchAreaSize = Util.getSetting(AppSetting.TOUCH_AREA.name(), MainActivity.DEFAULT_TOUCH_AREA_SIZE, this);
 
         broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -121,6 +123,9 @@ public class FloatingViewService extends AccessibilityService {
         if (extras.containsKey(AppSetting.ACTION_TOUCH.name())) {
             actionTouch = SlideAction.valueOf(extras.getString(AppSetting.ACTION_TOUCH.name()));
         }
+        if (extras.containsKey(AppSetting.TOUCH_AREA.name())) {
+            touchAreaSize = extras.getInt(AppSetting.TOUCH_AREA.name());
+        }
     }
 
     private float getOpacity(int opacity) {
@@ -189,12 +194,7 @@ public class FloatingViewService extends AccessibilityService {
                     }
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    int rad = 25;
-                    if (Math.pow(event.getRawX() - initialTouchX, 2)
-                            + Math.pow(event.getRawY() - initialTouchY, 2) <= rad * rad) {
-                        Log.d(TAG, "Min threshold is not reached");
-                        break;
-                    }
+
                     if (longPressed.get()) {
                         Log.d(TAG, "Action move long pressed");
 
@@ -205,6 +205,12 @@ public class FloatingViewService extends AccessibilityService {
 
                         windowManager.updateViewLayout(floatingView, layoutParams);
                     } else {
+                        int rad = touchAreaSize;
+                        if (Math.pow(event.getRawX() - initialTouchX, 2)
+                                + Math.pow(event.getRawY() - initialTouchY, 2) <= rad * rad) {
+                            Log.d(TAG, "Min threshold is not reached");
+                            break;
+                        }
                         Log.d(TAG, "Action move normal");
                         handler.removeCallbacks(longPressedChecked);
                     }
@@ -252,7 +258,7 @@ public class FloatingViewService extends AccessibilityService {
 
         @Nullable
         private SlideAction detectSwipe(MotionEvent event) {
-            int rad = 25;
+            int rad = touchAreaSize;
             float x = event.getRawX();
             float y = event.getRawY();
             if (Math.pow(x - initialTouchX, 2) + Math.pow(y - initialTouchY, 2) <= rad * rad) {

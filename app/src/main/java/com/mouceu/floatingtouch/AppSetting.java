@@ -9,7 +9,8 @@ enum AppSetting {
     ACTION_DOWN(R.string.setting_slide_down),
     ACTION_TOUCH(R.string.setting_touch),
     SENSITIVITY_ANGLE(R.string.angle_spinner_title),
-    OPACITY(R.string.opacity_picker_title)
+    OPACITY(R.string.opacity_picker_title),
+    TOUCH_AREA(R.string.touch_area_size)
     ;
 
     private final int resourceId;

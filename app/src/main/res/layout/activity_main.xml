@@ -17,6 +17,7 @@
         android:layout_marginBottom="20dp"
         android:text="@string/opacity_picker_title"
         android:textSize="@dimen/common_text_size"
+        android:labelFor="@id/opacity_picker"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -33,7 +34,7 @@
         app:layout_constraintTop_toBottomOf="@id/opacity_picker_title" />
 
     <View
-        android:id="@+id/divider"
+        android:id="@+id/divider1"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="16dp"
@@ -41,11 +42,44 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/opacity_picker" />
 
+    <TextView
+        android:id="@+id/touch_area_size_picker_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="20dp"
+        android:text="@string/touch_area_size"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/divider1"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <SeekBar
+        android:id="@+id/touch_area_size_picker"
+        android:layout_width="match_parent"
+        android:layout_height="16dp"
+        android:layout_marginHorizontal="5dp"
+        android:layout_marginTop="8dp"
+        android:max="200"
+        android:min="5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/touch_area_size_picker_title" />
+
+    <View
+        android:id="@+id/divider2"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="16dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/touch_area_size_picker" />
+
     <ListView
         android:id="@+id/setting_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/divider" />
+        app:layout_constraintTop_toBottomOf="@id/divider2" />
 
 
     <Button

@@ -31,9 +31,13 @@ public class MainActivity extends AppCompatActivity {
     private static final int ENABLE_ACCESSIBILITY_CODE = 2085;
     static final String SERVICE_PARAMS = "com.mouceu.floatingtouch.SERVICE_PARAMS";
     static final int DEFAULT_ANGLE = 90;
+    static final int DEFAULT_OPACITY = 0;
+    static final int DEFAULT_TOUCH_AREA_SIZE = 25;
 
-    private int selectedOpacity = 0;
+    private int selectedOpacity;
+    private int selectedTouchAreaSize;
     private TextView opacityPickerValue;
+    private TextView touchAreaSizePickerValue;
     private LocalBroadcastManager broadcastManager;
 
     @Override
@@ -58,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
         initSettingList();
         initOpacityPicker();
+        initTouchAreaPicker();
         initManageAccessibilityButton();
         initManageOverlayButton();
     }
@@ -87,10 +92,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void initOpacityPicker() {
         SeekBar opacityPicker = findViewById(R.id.opacity_picker);
-//        opacityPickerValue = findViewById(R.id.opacity_picker_value);
         opacityPickerValue = findViewById(R.id.opacity_picker_title);
         final String opacityPickerTitle = getString(R.string.opacity_picker_title) + ": %d";
-        selectedOpacity = Util.getSetting(OPACITY.name(), 0, MainActivity.this);
+        selectedOpacity = Util.getSetting(OPACITY.name(), DEFAULT_OPACITY, MainActivity.this);
         opacityPickerValue.setText(String.format(opacityPickerTitle, selectedOpacity));
         opacityPicker.setProgress(selectedOpacity);
 
@@ -111,6 +115,39 @@ public class MainActivity extends AppCompatActivity {
                 Util.saveSetting(OPACITY.name(), selectedOpacity, MainActivity.this);
                 Bundle bundle = new Bundle();
                 bundle.putInt(OPACITY.name(), selectedOpacity);
+                Intent intent = new Intent(SERVICE_PARAMS);
+                intent.putExtras(bundle);
+                broadcastManager.sendBroadcast(intent);
+            }
+        });
+    }
+
+    private void initTouchAreaPicker() {
+        SeekBar areaPicker = findViewById(R.id.touch_area_size_picker);
+        touchAreaSizePickerValue = findViewById(R.id.touch_area_size_picker_title);
+
+        final String title = getString(R.string.touch_area_size) + ": %d";
+        selectedTouchAreaSize = Util.getSetting(TOUCH_AREA.name(), DEFAULT_TOUCH_AREA_SIZE, MainActivity.this);
+        touchAreaSizePickerValue.setText(String.format(title, selectedTouchAreaSize));
+        areaPicker.setProgress(selectedTouchAreaSize);
+
+        areaPicker.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                selectedTouchAreaSize = seekBar.getProgress();
+
+                touchAreaSizePickerValue.setText(String.format(title, selectedTouchAreaSize));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                Util.saveSetting(TOUCH_AREA.name(), selectedTouchAreaSize, MainActivity.this);
+                Bundle bundle = new Bundle();
+                bundle.putInt(TOUCH_AREA.name(), selectedTouchAreaSize);
                 Intent intent = new Intent(SERVICE_PARAMS);
                 intent.putExtras(bundle);
                 broadcastManager.sendBroadcast(intent);
