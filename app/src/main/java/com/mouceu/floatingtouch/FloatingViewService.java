@@ -1,6 +1,7 @@
 package com.mouceu.floatingtouch;
 
 import android.accessibilityservice.AccessibilityService;
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +10,8 @@ import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
@@ -140,7 +143,6 @@ public class FloatingViewService extends AccessibilityService {
                 longPressed.set(true);
             }
         };
-        private final SwipeState swipeState = new SwipeState();
         private AtomicBoolean longPressed = new AtomicBoolean(false);
 
 
@@ -154,7 +156,9 @@ public class FloatingViewService extends AccessibilityService {
         }
 
         @Override
+        @SuppressLint("ClickableViewAccessibility")
         public boolean onTouch(View v, MotionEvent event) {
+            SlideAction action = null;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     initialX = layoutParams.x;
@@ -170,10 +174,9 @@ public class FloatingViewService extends AccessibilityService {
                     handler.removeCallbacks(longPressedChecked);
                     if (!longPressed.get()) {
                         Log.d(TAG, "Action up normal");
-                        detectSwipe(event);
-                        if (swipeState.any()) {
+                        if ((action = detectSwipe(event)) != null) {
                             Log.d(TAG, "swipe detected");
-                            onSwipe();
+                            handle(action);
                         }
                     } else {
                         Log.d(TAG, "Action up long pressed");
@@ -213,132 +216,72 @@ public class FloatingViewService extends AccessibilityService {
             return true;
         }
 
-        private class SwipeState {
-            private boolean swipeUp = false;
-            private boolean swipeDown = false;
-            private boolean swipeLeft = false;
-            private boolean swipeRight = false;
-            private boolean click = false;
-
-            public void swipeUp() {
-                this.swipeUp = true;
-            }
-
-            public void swipeDown() {
-                this.swipeDown = true;
-            }
-
-            public void swipeLeft() {
-                this.swipeLeft = true;
-            }
-
-            public void swipeRight() {
-                this.swipeRight = true;
-            }
-
-            public void click() {
-                this.click = true;
-            }
-
-            public boolean any() {
-                return swipeUp || swipeDown || swipeLeft || swipeRight || click;
-            }
-
-            public void reset() {
-                swipeUp = false;
-                swipeDown = false;
-                swipeLeft = false;
-                swipeRight = false;
-                click = false;
-            }
-        }
-
-        private void onSwipe() {
-            SlideAction action = null;
-            if (swipeState.click) {
-                action = actionTouch;
-            } else if (swipeState.swipeLeft) {
-                action = actionLeft;
-            } else if (swipeState.swipeUp ) {
-                action = actionUp;
-            } else if (swipeState.swipeRight) {
-                action = actionRight;
-            } else if (swipeState.swipeDown) {
-                action = actionDown;
-            }
-            swipeState.reset();
-
-            if (action != null) {
-                switch (action) {
-                    case GO_BACK:
-                        performGlobalAction(GLOBAL_ACTION_BACK);
-                        break;
-                    case OPEN_HOME_SCREEN:
-                        if ("OnePlus".equalsIgnoreCase(Build.MANUFACTURER)) {
-                            Intent intent = new Intent();
-                            intent.setAction(Intent.ACTION_MAIN);
-                            intent.addCategory(Intent.CATEGORY_HOME);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            startActivity(intent);
-                        } else {
-                            performGlobalAction(GLOBAL_ACTION_HOME);
+        private void handle(@NonNull SlideAction action) {
+            switch (action) {
+                case GO_BACK:
+                    performGlobalAction(GLOBAL_ACTION_BACK);
+                    break;
+                case OPEN_HOME_SCREEN:
+                    if ("OnePlus".equalsIgnoreCase(Build.MANUFACTURER)) {
+                        Intent intent = new Intent();
+                        intent.setAction(Intent.ACTION_MAIN);
+                        intent.addCategory(Intent.CATEGORY_HOME);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    } else {
+                        performGlobalAction(GLOBAL_ACTION_HOME);
+                    }
+                    break;
+                case OPEN_NOTIFICATIONS:
+                    performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS);
+                    break;
+                case OPEN_PREVIOUS_APP:
+                    performGlobalAction(GLOBAL_ACTION_RECENTS);
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            performGlobalAction(GLOBAL_ACTION_RECENTS);
                         }
-                        break;
-                    case OPEN_NOTIFICATIONS:
-                        performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS);
-                        break;
-                    case OPEN_PREVIOUS_APP:
-                        performGlobalAction(GLOBAL_ACTION_RECENTS);
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                performGlobalAction(GLOBAL_ACTION_RECENTS);
-                            }
-                        }, 50);
-                        break;
-                    case OPEN_RECENT_APPS:
-                        performGlobalAction(GLOBAL_ACTION_RECENTS);
-                        break;
-                }
+                    }, 50);
+                    break;
+                case OPEN_RECENT_APPS:
+                    performGlobalAction(GLOBAL_ACTION_RECENTS);
+                    break;
             }
         }
 
-        private boolean detectSwipe(MotionEvent event) {
+        @Nullable
+        private SlideAction detectSwipe(MotionEvent event) {
             int rad = 25;
             float x = event.getRawX();
             float y = event.getRawY();
             if (Math.pow(x - initialTouchX, 2) + Math.pow(y - initialTouchY, 2) <= rad * rad) {
                 Log.d(TAG, "Min threshold is not reached");
-                swipeState.click();
-                return true;
+                return actionTouch;
             }
 
             double slope = getSlope(coneOfSensitivityAngle);
             if (y - initialTouchY >= slope * (x - initialTouchX)
                     && y - initialTouchY >= slope * (-x + initialTouchX)) {
-                swipeState.swipeDown();
                 Log.d(TAG, "Swipe down");
-                return true;
+                return actionDown;
             }
             if (y - initialTouchY > (x - initialTouchX) / slope
                     && y - initialTouchY < (-x + initialTouchX) / slope) {
-                swipeState.swipeLeft();
                 Log.d(TAG, "Swipe left");
-                return true;
+                return actionLeft;
             }
             if (y - initialTouchY <= slope * (x - initialTouchX)
                     && y - initialTouchY <= slope * (-x + initialTouchX)) {
-                swipeState.swipeUp();
                 Log.d(TAG, "Swipe up");
-                return true;
+                return actionUp;
             }
             if (y - initialTouchY < (x - initialTouchX) / slope
                     && y - initialTouchY > (-x + initialTouchX) / slope) {
-                swipeState.swipeRight();
                 Log.d(TAG, "Swipe right");
-                return true;
+                return actionRight;
             }
-            return false;
+            return null;
         }
 
         private double getSlope(int angleDegree) {
