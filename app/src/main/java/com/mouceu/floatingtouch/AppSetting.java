@@ -10,5 +10,6 @@ enum AppSetting {
     OPACITY,
     TOUCH_AREA,
     POSITION_X,
-    POSITION_Y
+    POSITION_Y,
+    FLOATING_TOUCH_SIZE
 }

@@ -30,10 +30,12 @@ public class FloatingViewService extends AccessibilityService {
     private WindowManager windowManager;
     private WindowManager.LayoutParams layoutParams;
     private View floatingView;
+    private View floatingButton;
     private BroadcastReceiver broadcastReceiver;
     private int coneOfSensitivityAngle = MainActivity.DEFAULT_ANGLE;
     private double slope = 1;
     private int touchAreaSize = MainActivity.DEFAULT_TOUCH_AREA_SIZE;
+    private int floatingTouchSize = MainActivity.DEFAULT_FLOATING_TOUCH_SIZE;
     private SlideAction actionLeft;
     private SlideAction actionUp;
     private SlideAction actionRight;
@@ -43,19 +45,6 @@ public class FloatingViewService extends AccessibilityService {
     @Override
     public void onCreate() {
         super.onCreate();
-        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_touch, null);
-        floatingView.setAlpha(getStoredOpacity());
-        restoreSettings();
-
-        broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                updateSettings(intent);
-            }
-        };
-        LocalBroadcastManager.getInstance(this)
-                .registerReceiver(broadcastReceiver, new IntentFilter(MainActivity.SERVICE_PARAMS));
-
         layoutParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -67,14 +56,24 @@ public class FloatingViewService extends AccessibilityService {
         layoutParams.gravity = Gravity.TOP | Gravity.START;
         layoutParams.x = Util.getSetting(AppSetting.POSITION_X.name(), DEFAULT_X, this);
         layoutParams.y = Util.getSetting(AppSetting.POSITION_Y.name(), DEFAULT_Y, this);
-
+        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_touch, null);
+        floatingView.setAlpha(getStoredOpacity());
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         windowManager.addView(floatingView, layoutParams);
+        floatingButton = floatingView.findViewById(R.id.iv_floating_button);
+        floatingButton.setOnTouchListener(new FloatingViewOnTouchListener());
 
-        final View floatingView = this.floatingView.findViewById(R.id.iv_floating_button);
-        floatingView.setOnTouchListener(new FloatingViewOnTouchListener());
+        restoreSettings();
+
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                updateSettings(intent);
+            }
+        };
+        LocalBroadcastManager.getInstance(this)
+                .registerReceiver(broadcastReceiver, new IntentFilter(MainActivity.SERVICE_PARAMS));
     }
-
 
     @Override
     public boolean onUnbind(Intent intent) {
@@ -121,6 +120,18 @@ public class FloatingViewService extends AccessibilityService {
         touchAreaSize = Util.getSetting(
                 AppSetting.TOUCH_AREA.name(), MainActivity.DEFAULT_TOUCH_AREA_SIZE, this);
         Log.d(TAG, String.format(format, AppSetting.TOUCH_AREA, touchAreaSize));
+
+        floatingTouchSize = Util.getSetting(AppSetting.FLOATING_TOUCH_SIZE.name(),
+                MainActivity.DEFAULT_FLOATING_TOUCH_SIZE, this);
+        Log.d(TAG, String.format(format, AppSetting.FLOATING_TOUCH_SIZE, floatingTouchSize));
+        updateFloatingViewSize();
+    }
+
+
+    private void updateFloatingViewSize() {
+        float density = getResources().getDisplayMetrics().density;
+        floatingButton.getLayoutParams().width = (int) (density * floatingTouchSize);
+        floatingButton.getLayoutParams().height = (int) (density * floatingTouchSize);
     }
 
     private void updateSettings(Intent intent) {
@@ -166,6 +177,12 @@ public class FloatingViewService extends AccessibilityService {
         if (extras.containsKey(AppSetting.TOUCH_AREA.name())) {
             touchAreaSize = extras.getInt(AppSetting.TOUCH_AREA.name());
             Log.d(TAG, String.format(format, AppSetting.TOUCH_AREA, touchAreaSize));
+        }
+        if (extras.containsKey(AppSetting.FLOATING_TOUCH_SIZE.name())) {
+            floatingTouchSize = extras.getInt(AppSetting.FLOATING_TOUCH_SIZE.name());
+            Log.d(TAG, String.format(format, AppSetting.FLOATING_TOUCH_SIZE, floatingTouchSize));
+            updateFloatingViewSize();
+            windowManager.updateViewLayout(floatingView, layoutParams);
         }
     }
 

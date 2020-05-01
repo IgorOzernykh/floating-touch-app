@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     static final int DEFAULT_ANGLE = 90;
     static final int DEFAULT_OPACITY = 0;
     static final int DEFAULT_TOUCH_AREA_SIZE = 25;
+    static final int DEFAULT_FLOATING_TOUCH_SIZE = 24;
 
     private LocalBroadcastManager broadcastManager;
 
@@ -60,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
         initSettingList();
         initOpacityPicker();
+        initFloatingTouchSizePicker();
         initTouchAreaPicker();
         initManageAccessibilityButton();
         initManageOverlayButton();
@@ -116,8 +118,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-
-
     private void initTouchAreaPicker() {
         SeekBar areaPicker = findViewById(R.id.touch_area_size_picker);
         final TextView touchAreaSizePickerValue = findViewById(R.id.touch_area_size_picker_title);
@@ -141,6 +141,34 @@ public class MainActivity extends AppCompatActivity {
                 int touchArea = seekBar.getProgress();
                 Util.saveSetting(TOUCH_AREA.name(), touchArea, MainActivity.this);
                 notifySettingChanged(TOUCH_AREA.name(), touchArea);
+            }
+        });
+    }
+
+    private void initFloatingTouchSizePicker() {
+        SeekBar sizePicker = findViewById(R.id.floating_touch_size_picker);
+        final TextView floatingTouchSizePicker = findViewById(R.id.floating_touch_size_picker_title);
+        final String title = getString(R.string.floating_touch_size) + ": %d";
+        int floatingTouchSize = Util.getSetting(
+                FLOATING_TOUCH_SIZE.name(), DEFAULT_FLOATING_TOUCH_SIZE, MainActivity.this);
+        floatingTouchSizePicker.setText(String.format(title, floatingTouchSize));
+        sizePicker.setProgress(floatingTouchSize);
+
+        sizePicker.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                floatingTouchSizePicker.setText(String.format(title, seekBar.getProgress()));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                int floatingTouchSize = seekBar.getProgress();
+                Util.saveSetting(FLOATING_TOUCH_SIZE.name(), floatingTouchSize, MainActivity.this);
+                notifySettingChanged(FLOATING_TOUCH_SIZE.name(), floatingTouchSize);
             }
         });
     }
