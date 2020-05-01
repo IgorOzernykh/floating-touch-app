@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
             if (!Util.isAccessibilityServiceEnabled(this, FloatingViewService.class)) {
                 Toast.makeText(
                         this,
-                        "Enable FloatingView service in accessibility settings",
+                        R.string.enable_service_message,
                         Toast.LENGTH_SHORT
                 ).show();
             }
@@ -175,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
                         touchIcon),
                 new SettingItem(SENSITIVITY_ANGLE,
                         settingTitles.get(SENSITIVITY_ANGLE),
-                        Util.getSetting(SENSITIVITY_ANGLE.name(), String.valueOf(DEFAULT_ANGLE), this),
+                        String.valueOf(Util.getSetting(SENSITIVITY_ANGLE.name(), DEFAULT_ANGLE, this)),
                         sensitivityIcon)
         );
 
@@ -183,7 +183,7 @@ public class MainActivity extends AppCompatActivity {
         final ListView settingList = findViewById(R.id.setting_list);
         settingList.setAdapter(adapter);
 
-        final String[] angleValues = getResources().getStringArray(R.array.sensitivity_angle_values);
+        final int[] angleValues = getResources().getIntArray(R.array.sensitivity_angle_values);
         final String[] actions = actionTitles.values().toArray(new String[0]);
         settingList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -204,7 +204,8 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
                                         final SlideAction action = SlideAction.values()[which];
-                                        Util.saveSetting(clickedItem.getName().name(), action.name(), MainActivity.this);
+                                        Util.saveSetting(clickedItem.getName().name(),
+                                                action.name(), MainActivity.this);
                                         clickedItem.setValue(actions[which]);
                                         adapter.notifyDataSetChanged();
                                         notifySettingChanged(clickedItem.getName().name(), action.name());
@@ -215,12 +216,13 @@ public class MainActivity extends AppCompatActivity {
                     case SENSITIVITY_ANGLE:
                         builder
                                 .setTitle(R.string.angle_spinner_title)
-                                .setItems(angleValues, new DialogInterface.OnClickListener() {
+                                .setItems(R.array.sensitivity_angle_values, new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
-                                        final String angleValue = angleValues[which];
-                                        Util.saveSetting(clickedItem.getName().name(), angleValue, MainActivity.this);
-                                        clickedItem.setValue(angleValue);
+                                        final int angleValue = angleValues[which];
+                                        Util.saveSetting(clickedItem.getName().name(),
+                                                angleValue, MainActivity.this);
+                                        clickedItem.setValue(String.valueOf(angleValue));
                                         adapter.notifyDataSetChanged();
                                         notifySettingChanged(clickedItem.getName().name(), angleValue);
                                     }

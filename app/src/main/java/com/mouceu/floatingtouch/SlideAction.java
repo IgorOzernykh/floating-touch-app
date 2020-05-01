@@ -5,5 +5,6 @@ enum SlideAction {
     OPEN_NOTIFICATIONS,
     OPEN_HOME_SCREEN,
     OPEN_PREVIOUS_APP,
-    GO_BACK
+    GO_BACK,
+    NONE
 }

@@ -8,5 +8,7 @@ enum AppSetting {
     ACTION_TOUCH,
     SENSITIVITY_ANGLE,
     OPACITY,
-    TOUCH_AREA
+    TOUCH_AREA,
+    POSITION_X,
+    POSITION_Y
 }

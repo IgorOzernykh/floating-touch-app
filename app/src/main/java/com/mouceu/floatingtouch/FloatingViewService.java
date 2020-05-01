@@ -11,7 +11,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
@@ -25,13 +24,15 @@ import android.view.accessibility.AccessibilityEvent;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FloatingViewService extends AccessibilityService {
-    private static final String POSITION_X_KEY = "POS_X";
-    private static final String POSITION_Y_KEY = "POS_Y";
-
+    private static final String TAG = "FloatingView";
+    private static final int DEFAULT_X = 100;
+    private static final int DEFAULT_Y = 100;
     private WindowManager windowManager;
+    private WindowManager.LayoutParams layoutParams;
     private View floatingView;
     private BroadcastReceiver broadcastReceiver;
     private int coneOfSensitivityAngle = MainActivity.DEFAULT_ANGLE;
+    private double slope = 1;
     private int touchAreaSize = MainActivity.DEFAULT_TOUCH_AREA_SIZE;
     private SlideAction actionLeft;
     private SlideAction actionUp;
@@ -44,13 +45,7 @@ public class FloatingViewService extends AccessibilityService {
         super.onCreate();
         floatingView = LayoutInflater.from(this).inflate(R.layout.floating_touch, null);
         floatingView.setAlpha(getStoredOpacity());
-        actionLeft = Util.getStoredAction(AppSetting.ACTION_LEFT, SlideAction.OPEN_RECENT_APPS, this);
-        actionUp = Util.getStoredAction(AppSetting.ACTION_UP, SlideAction.OPEN_HOME_SCREEN, this);
-        actionRight = Util.getStoredAction(AppSetting.ACTION_RIGHT, SlideAction.OPEN_PREVIOUS_APP, this);
-        actionDown = Util.getStoredAction(AppSetting.ACTION_DOWN, SlideAction.OPEN_NOTIFICATIONS, this);
-        actionTouch = Util.getStoredAction(AppSetting.ACTION_TOUCH, SlideAction.GO_BACK, this);
-        coneOfSensitivityAngle = Integer.parseInt(Util.getSetting(AppSetting.SENSITIVITY_ANGLE.name(), String.valueOf(MainActivity.DEFAULT_ANGLE), this));
-        touchAreaSize = Util.getSetting(AppSetting.TOUCH_AREA.name(), MainActivity.DEFAULT_TOUCH_AREA_SIZE, this);
+        restoreSettings();
 
         broadcastReceiver = new BroadcastReceiver() {
             @Override
@@ -61,7 +56,7 @@ public class FloatingViewService extends AccessibilityService {
         LocalBroadcastManager.getInstance(this)
                 .registerReceiver(broadcastReceiver, new IntentFilter(MainActivity.SERVICE_PARAMS));
 
-        final WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams(
+        layoutParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -70,15 +65,16 @@ public class FloatingViewService extends AccessibilityService {
                 PixelFormat.TRANSLUCENT
         );
         layoutParams.gravity = Gravity.TOP | Gravity.START;
-        layoutParams.x = Util.getSetting(POSITION_X_KEY, 100, this);
-        layoutParams.y = Util.getSetting(POSITION_Y_KEY, 100, this);
+        layoutParams.x = Util.getSetting(AppSetting.POSITION_X.name(), DEFAULT_X, this);
+        layoutParams.y = Util.getSetting(AppSetting.POSITION_Y.name(), DEFAULT_Y, this);
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         windowManager.addView(floatingView, layoutParams);
 
         final View floatingView = this.floatingView.findViewById(R.id.iv_floating_button);
-        floatingView.setOnTouchListener(new FloatingViewOnTouchListener(layoutParams));
+        floatingView.setOnTouchListener(new FloatingViewOnTouchListener());
     }
+
 
     @Override
     public boolean onUnbind(Intent intent) {
@@ -94,37 +90,82 @@ public class FloatingViewService extends AccessibilityService {
     public void onInterrupt() {
     }
 
+    private void restoreSettings() {
+        final String format = "Stored setting: %s = %s";
+        actionLeft = Util.getStoredAction(
+                AppSetting.ACTION_LEFT, SlideAction.OPEN_RECENT_APPS, this);
+        Log.d(TAG, String.format(format, AppSetting.ACTION_LEFT, actionLeft));
+
+        actionUp = Util.getStoredAction(
+                AppSetting.ACTION_UP, SlideAction.OPEN_HOME_SCREEN, this);
+        Log.d(TAG, String.format(format, AppSetting.ACTION_UP, actionUp));
+
+        actionRight = Util.getStoredAction(
+                AppSetting.ACTION_RIGHT, SlideAction.OPEN_PREVIOUS_APP, this);
+        Log.d(TAG, String.format(format, AppSetting.ACTION_RIGHT, actionRight));
+
+        actionDown = Util.getStoredAction(
+                AppSetting.ACTION_DOWN, SlideAction.OPEN_NOTIFICATIONS, this);
+        Log.d(TAG, String.format(format, AppSetting.ACTION_DOWN, actionDown));
+
+        actionTouch = Util.getStoredAction(
+                AppSetting.ACTION_TOUCH, SlideAction.GO_BACK, this);
+        Log.d(TAG, String.format(format, AppSetting.ACTION_TOUCH, actionTouch));
+
+        coneOfSensitivityAngle = Util.getSetting(
+                AppSetting.SENSITIVITY_ANGLE.name(), MainActivity.DEFAULT_ANGLE, this);
+        Log.d(TAG, String.format(format, AppSetting.SENSITIVITY_ANGLE, coneOfSensitivityAngle));
+
+        slope = getSlope(coneOfSensitivityAngle);
+
+        touchAreaSize = Util.getSetting(
+                AppSetting.TOUCH_AREA.name(), MainActivity.DEFAULT_TOUCH_AREA_SIZE, this);
+        Log.d(TAG, String.format(format, AppSetting.TOUCH_AREA, touchAreaSize));
+    }
+
     private void updateSettings(Intent intent) {
         Bundle extras = intent.getExtras();
         if (extras == null) return;
+        final String format = "Update setting: %s = %s";
         if (extras.containsKey(AppSetting.OPACITY.name())) {
-            floatingView.setAlpha(getOpacity(extras.getInt(AppSetting.OPACITY.name())));
+            int newOpacityValue = extras.getInt(AppSetting.OPACITY.name());
+            Log.d(TAG, String.format(format, AppSetting.OPACITY, newOpacityValue));
+            floatingView.setAlpha(getOpacity(newOpacityValue));
         }
         if (extras.containsKey(AppSetting.SENSITIVITY_ANGLE.name())) {
             String newAngleStr = extras.getString(AppSetting.SENSITIVITY_ANGLE.name());
             if (newAngleStr != null) {
                 int newAngle = Integer.parseInt(newAngleStr);
-                if (newAngle > 0)
+                if (newAngle > 0) {
                     coneOfSensitivityAngle = newAngle;
+                    Log.d(TAG, String.format(format, AppSetting.SENSITIVITY_ANGLE, newAngle));
+                    slope = getSlope(newAngle);
+                }
             }
         }
         if (extras.containsKey(AppSetting.ACTION_LEFT.name())) {
             actionLeft = SlideAction.valueOf(extras.getString(AppSetting.ACTION_LEFT.name()));
+            Log.d(TAG, String.format(format, AppSetting.ACTION_LEFT, actionLeft));
         }
         if (extras.containsKey(AppSetting.ACTION_UP.name())) {
             actionUp = SlideAction.valueOf(extras.getString(AppSetting.ACTION_UP.name()));
+            Log.d(TAG, String.format(format, AppSetting.ACTION_UP, actionUp));
         }
         if (extras.containsKey(AppSetting.ACTION_RIGHT.name())) {
             actionRight = SlideAction.valueOf(extras.getString(AppSetting.ACTION_RIGHT.name()));
+            Log.d(TAG, String.format(format, AppSetting.ACTION_RIGHT, actionRight));
         }
         if (extras.containsKey(AppSetting.ACTION_DOWN.name())) {
             actionDown = SlideAction.valueOf(extras.getString(AppSetting.ACTION_DOWN.name()));
+            Log.d(TAG, String.format(format, AppSetting.ACTION_DOWN, actionDown));
         }
         if (extras.containsKey(AppSetting.ACTION_TOUCH.name())) {
             actionTouch = SlideAction.valueOf(extras.getString(AppSetting.ACTION_TOUCH.name()));
+            Log.d(TAG, String.format(format, AppSetting.ACTION_TOUCH, actionTouch));
         }
         if (extras.containsKey(AppSetting.TOUCH_AREA.name())) {
             touchAreaSize = extras.getInt(AppSetting.TOUCH_AREA.name());
+            Log.d(TAG, String.format(format, AppSetting.TOUCH_AREA, touchAreaSize));
         }
     }
 
@@ -138,9 +179,16 @@ public class FloatingViewService extends AccessibilityService {
         return getOpacity(opacity);
     }
 
+    private double getSlope(int angleDegree) {
+        if (angleDegree >= 90 || angleDegree <= 0)
+            return 1;
+
+        double a = Math.tan(angleDegree * Math.PI / 180);
+        return  (1 + Math.sqrt(1 + a * a)) / a;
+    }
+
     private class FloatingViewOnTouchListener implements View.OnTouchListener {
         private static final String TAG = "Gesture";
-        private final WindowManager.LayoutParams layoutParams;
         private final Handler handler = new Handler();
         private final Runnable longPressedChecked = new Runnable() {
             @Override
@@ -149,21 +197,14 @@ public class FloatingViewService extends AccessibilityService {
             }
         };
         private AtomicBoolean longPressed = new AtomicBoolean(false);
-
-
         private int initialX;
         private int initialY;
         private float initialTouchX;
         private float initialTouchY;
 
-        public FloatingViewOnTouchListener(WindowManager.LayoutParams layoutParams) {
-            this.layoutParams = layoutParams;
-        }
-
         @Override
         @SuppressLint("ClickableViewAccessibility")
         public boolean onTouch(View v, MotionEvent event) {
-            SlideAction action = null;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     initialX = layoutParams.x;
@@ -171,15 +212,17 @@ public class FloatingViewService extends AccessibilityService {
                     initialTouchX = event.getRawX();
                     initialTouchY = event.getRawY();
 
-                    if (!longPressed.get())
+                    if (!longPressed.get()) {
                         handler.postDelayed(longPressedChecked, ViewConfiguration.getLongPressTimeout());
-
+                    }
                     break;
                 case MotionEvent.ACTION_UP:
                     handler.removeCallbacks(longPressedChecked);
                     if (!longPressed.get()) {
                         Log.d(TAG, "Action up normal");
-                        if ((action = detectSwipe(event)) != null) {
+
+                        final SlideAction action = detectSwipe(event);
+                        if (action != SlideAction.NONE) {
                             Log.d(TAG, "swipe detected");
                             handle(action);
                         }
@@ -187,10 +230,10 @@ public class FloatingViewService extends AccessibilityService {
                         Log.d(TAG, "Action up long pressed");
                         longPressed.set(false);
 
-                        int x = initialX + (int) (event.getRawX() - initialTouchX);
-                        int y = initialY + (int) (event.getRawY() - initialTouchY);
-                        Util.saveSetting(POSITION_X_KEY, x, FloatingViewService.this);
-                        Util.saveSetting(POSITION_Y_KEY, y, FloatingViewService.this);
+                        int x = getNewCoordinate(initialX, event.getRawX(), initialTouchX);
+                        int y = getNewCoordinate(initialY, event.getRawY(), initialTouchY);
+                        Util.saveSetting(AppSetting.POSITION_X.name(), x, FloatingViewService.this);
+                        Util.saveSetting(AppSetting.POSITION_Y.name(), y, FloatingViewService.this);
                     }
                     break;
                 case MotionEvent.ACTION_MOVE:
@@ -198,16 +241,14 @@ public class FloatingViewService extends AccessibilityService {
                     if (longPressed.get()) {
                         Log.d(TAG, "Action move long pressed");
 
-                        int x = initialX + (int) (event.getRawX() - initialTouchX);
-                        int y = initialY + (int) (event.getRawY() - initialTouchY);
+                        int x = getNewCoordinate(initialX, event.getRawX(), initialTouchX);
+                        int y = getNewCoordinate(initialY, event.getRawY(), initialTouchY);
                         layoutParams.x = x;
                         layoutParams.y = y;
 
                         windowManager.updateViewLayout(floatingView, layoutParams);
                     } else {
-                        int rad = touchAreaSize;
-                        if (Math.pow(event.getRawX() - initialTouchX, 2)
-                                + Math.pow(event.getRawY() - initialTouchY, 2) <= rad * rad) {
+                        if (isWithinTouchArea(event.getRawX(), event.getRawY())) {
                             Log.d(TAG, "Min threshold is not reached");
                             break;
                         }
@@ -248,7 +289,7 @@ public class FloatingViewService extends AccessibilityService {
                         public void run() {
                             performGlobalAction(GLOBAL_ACTION_RECENTS);
                         }
-                    }, 50);
+                    }, 100);
                     break;
                 case OPEN_RECENT_APPS:
                     performGlobalAction(GLOBAL_ACTION_RECENTS);
@@ -256,17 +297,15 @@ public class FloatingViewService extends AccessibilityService {
             }
         }
 
-        @Nullable
+        @NonNull
         private SlideAction detectSwipe(MotionEvent event) {
-            int rad = touchAreaSize;
             float x = event.getRawX();
             float y = event.getRawY();
-            if (Math.pow(x - initialTouchX, 2) + Math.pow(y - initialTouchY, 2) <= rad * rad) {
+            if (isWithinTouchArea(x, y)) {
                 Log.d(TAG, "Min threshold is not reached");
                 return actionTouch;
             }
 
-            double slope = getSlope(coneOfSensitivityAngle);
             if (y - initialTouchY >= slope * (x - initialTouchX)
                     && y - initialTouchY >= slope * (-x + initialTouchX)) {
                 Log.d(TAG, "Swipe down");
@@ -287,15 +326,16 @@ public class FloatingViewService extends AccessibilityService {
                 Log.d(TAG, "Swipe right");
                 return actionRight;
             }
-            return null;
+            return SlideAction.NONE;
         }
 
-        private double getSlope(int angleDegree) {
-            if (angleDegree >= 90 || angleDegree <= 0)
-                return 1;
+        private int getNewCoordinate(int viewInitial, float eventCurrent, float eventInitial) {
+            return viewInitial + (int) (eventCurrent - eventInitial);
+        }
 
-            double a = Math.tan(angleDegree * Math.PI / 180);
-            return  (1 + Math.sqrt(1 + a * a)) / a;
+        private boolean isWithinTouchArea(float x, float y) {
+            return Math.pow(x - initialTouchX, 2) + Math.pow(y - initialTouchY, 2)
+                    <= touchAreaSize * touchAreaSize;
         }
     }
 }
