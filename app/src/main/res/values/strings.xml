@@ -17,6 +17,7 @@
     <string name="action_open_home_screen">Back to Home screen</string>
     <string name="action_open_previous_app">Back to previous app</string>
     <string name="action_go_back">Back to previous screen</string>
+    <string name="action_empty">None</string>
     <string name="action_selection_dialog_title">Select action</string>
     <string name="touch_area_size">Touch area size</string>
     <string name="floating_touch_size">Floating touch size</string>

@@ -282,6 +282,7 @@ public class MainActivity extends AppCompatActivity {
         actionTitles.put(OPEN_HOME_SCREEN, getString(R.string.action_open_home_screen));
         actionTitles.put(OPEN_PREVIOUS_APP, getString(R.string.action_open_previous_app));
         actionTitles.put(GO_BACK, getString(R.string.action_go_back));
+        actionTitles.put(NONE, getString(R.string.action_empty));
         return actionTitles;
     }
 
