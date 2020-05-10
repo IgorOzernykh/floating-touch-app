@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
     static final int DEFAULT_ANGLE = 90;
     static final int DEFAULT_OPACITY = 0;
     static final int DEFAULT_TOUCH_AREA_SIZE = 25;
-    static final int DEFAULT_FLOATING_TOUCH_SIZE = 24;
+    static final int DEFAULT_FLOATING_TOUCH_SIZE = 32;
 
     private LocalBroadcastManager broadcastManager;
 
