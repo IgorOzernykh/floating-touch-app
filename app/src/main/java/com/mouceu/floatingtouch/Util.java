@@ -5,6 +5,9 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.support.annotation.NonNull;
 import android.view.accessibility.AccessibilityManager;
 
@@ -31,15 +34,29 @@ class Util {
         return false;
     }
 
+    static Drawable getRotateDrawable(@NonNull final Drawable d, final float angle) {
+        final Drawable[] layers = {d};
+        return new LayerDrawable(layers) {
+            @Override
+            public void draw(final Canvas canvas) {
+                canvas.save();
+                canvas.rotate(angle, d.getBounds().width() / 2, d.getBounds().height() / 2);
+                super.draw(canvas);
+                canvas.restore();
+            }
+        };
+    }
+
     static  <T> void saveSetting(String key, T value, Context context) {
         final SharedPreferences preferences = getSharedPreferences(context);
         final SharedPreferences.Editor editor = preferences.edit();
-        if (value == null)
+        if (value == null) {
             editor.remove(key);
-        else if (value.getClass() == int.class || value.getClass() == Integer.class)
+        } else if (value.getClass() == int.class || value.getClass() == Integer.class) {
             editor.putInt(key, (Integer) value);
-        else
+        } else {
             editor.putString(key, String.valueOf(value));
+        }
         editor.apply();
     }
 
@@ -48,10 +65,11 @@ class Util {
         @SuppressWarnings("unchecked")
         final Class<T> cl = (Class<T>) defaultValue.getClass();
         T value;
-        if (cl == int.class || cl == Integer.class)
+        if (cl == int.class || cl == Integer.class) {
             value = cl.cast(preferences.getInt(key, (Integer) defaultValue));
-        else
+        } else {
             value = cl.cast(preferences.getString(key, (String) defaultValue));
+        }
         return value;
     }
 

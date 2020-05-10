@@ -2,9 +2,7 @@ package com.mouceu.floatingtouch;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -185,15 +183,15 @@ public class MainActivity extends AppCompatActivity {
                 new SettingItem(ACTION_LEFT,
                         settingTitles.get(ACTION_LEFT),
                         actionTitles.get(Util.getStoredAction(ACTION_LEFT, OPEN_RECENT_APPS, this)),
-                        getRotateDrawable(arrowIcon, 90)),
+                        Util.getRotateDrawable(arrowIcon, 90)),
                 new SettingItem(ACTION_UP,
                         settingTitles.get(ACTION_UP),
                         actionTitles.get(Util.getStoredAction(ACTION_UP, OPEN_HOME_SCREEN, this)),
-                        getRotateDrawable(arrowIcon, 180)),
+                        Util.getRotateDrawable(arrowIcon, 180)),
                 new SettingItem(ACTION_RIGHT,
                         settingTitles.get(ACTION_RIGHT),
                         actionTitles.get(Util.getStoredAction(ACTION_RIGHT, OPEN_PREVIOUS_APP, this)),
-                        getRotateDrawable(arrowIcon, 270)),
+                        Util.getRotateDrawable(arrowIcon, 270)),
                 new SettingItem(ACTION_DOWN,
                         settingTitles.get(ACTION_DOWN),
                         actionTitles.get(Util.getStoredAction(ACTION_DOWN, OPEN_NOTIFICATIONS, this)),
@@ -288,19 +286,6 @@ public class MainActivity extends AppCompatActivity {
         actionTitles.put(OPEN_QUICK_SETTINGS, getString(R.string.action_open_quick_settings));
         actionTitles.put(TOGGLE_SPLIT_SCREEN, getString(R.string.action_toggle_split_screen));
         return actionTitles;
-    }
-
-    private Drawable getRotateDrawable(@NonNull final Drawable d, final float angle) {
-        final Drawable[] layers = {d};
-        return new LayerDrawable(layers) {
-            @Override
-            public void draw(final Canvas canvas) {
-                canvas.save();
-                canvas.rotate(angle, d.getBounds().width() / 2, d.getBounds().height() / 2);
-                super.draw(canvas);
-                canvas.restore();
-            }
-        };
     }
 
     private <T> void notifySettingChanged(String key, @NonNull T value) {
