@@ -22,4 +22,7 @@
     <string name="touch_area_size">Touch area size</string>
     <string name="floating_touch_size">Floating touch size</string>
     <string name="tile_title">Floating touch</string>
+    <string name="action_open_power_dialog">Open the power long-pressed dialog</string>
+    <string name="action_open_quick_settings">Open quick settings</string>
+    <string name="action_toggle_split_screen">Toggle split screen</string>
 </resources>

@@ -284,6 +284,9 @@ public class MainActivity extends AppCompatActivity {
         actionTitles.put(OPEN_PREVIOUS_APP, getString(R.string.action_open_previous_app));
         actionTitles.put(GO_BACK, getString(R.string.action_go_back));
         actionTitles.put(NONE, getString(R.string.action_empty));
+        actionTitles.put(OPEN_POWER_DIALOG, getString(R.string.action_open_power_dialog));
+        actionTitles.put(OPEN_QUICK_SETTINGS, getString(R.string.action_open_quick_settings));
+        actionTitles.put(TOGGLE_SPLIT_SCREEN, getString(R.string.action_toggle_split_screen));
         return actionTitles;
     }
 

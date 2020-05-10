@@ -332,6 +332,15 @@ public class FloatingViewService extends AccessibilityService {
                 case OPEN_RECENT_APPS:
                     performGlobalAction(GLOBAL_ACTION_RECENTS);
                     break;
+                case OPEN_POWER_DIALOG:
+                    performGlobalAction(GLOBAL_ACTION_POWER_DIALOG);
+                    break;
+                case OPEN_QUICK_SETTINGS:
+                    performGlobalAction(GLOBAL_ACTION_QUICK_SETTINGS);
+                    break;
+                case TOGGLE_SPLIT_SCREEN:
+                    performGlobalAction(GLOBAL_ACTION_TOGGLE_SPLIT_SCREEN);
+                    break;
             }
         }
 
