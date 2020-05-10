@@ -45,6 +45,12 @@ public class MainActivity extends AppCompatActivity {
         broadcastManager = LocalBroadcastManager.getInstance(this);
         setContentView(R.layout.activity_main);
 
+        if (!Util.isAccessibilityServiceEnabled(this, FloatingViewService.class)) {
+            // TODO: message/instruction
+            Intent accessibilityIntent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+            startActivityForResult(accessibilityIntent, ENABLE_ACCESSIBILITY_CODE);
+        }
+
         if (!Settings.canDrawOverlays(this)) {
             Intent intent = new Intent(
                     Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -52,11 +58,6 @@ public class MainActivity extends AppCompatActivity {
             );
             // TODO: message/instruction
             startActivityForResult(intent, DRAW_OVER_OTHER_APP_PERMISSION_CODE);
-        }
-        if (!Util.isAccessibilityServiceEnabled(this, FloatingViewService.class)) {
-            // TODO: message/instruction
-            Intent accessibilityIntent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-            startActivityForResult(accessibilityIntent, ENABLE_ACCESSIBILITY_CODE);
         }
 
         initSettingList();

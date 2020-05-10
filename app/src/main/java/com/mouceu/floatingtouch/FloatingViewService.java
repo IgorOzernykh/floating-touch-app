@@ -24,6 +24,10 @@ import android.view.accessibility.AccessibilityEvent;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FloatingViewService extends AccessibilityService {
+    static final String STATE = "state";
+    static final int STATE_VISIBLE = 3091;
+    static final int STATE_HIDDEN = 3092;
+    static final int STATE_UNKNOWN = 3093;
     private static final String TAG = "FloatingView";
     private static final int DEFAULT_X = 100;
     private static final int DEFAULT_Y = 100;
@@ -31,6 +35,7 @@ public class FloatingViewService extends AccessibilityService {
     private WindowManager.LayoutParams layoutParams;
     private View floatingView;
     private View floatingButton;
+    private LocalBroadcastManager localBroadcastManager;
     private BroadcastReceiver broadcastReceiver;
     private int coneOfSensitivityAngle = MainActivity.DEFAULT_ANGLE;
     private double slope = 1;
@@ -41,10 +46,12 @@ public class FloatingViewService extends AccessibilityService {
     private SlideAction actionRight;
     private SlideAction actionDown;
     private SlideAction actionTouch;
+    private boolean visible = true;
 
     @Override
-    public void onCreate() {
-        super.onCreate();
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+        localBroadcastManager = LocalBroadcastManager.getInstance(this);
         layoutParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -68,16 +75,30 @@ public class FloatingViewService extends AccessibilityService {
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                updateSettings(intent);
+                if (MainActivity.SERVICE_PARAMS.equals(intent.getAction())) {
+                    updateSettings(intent);
+                } else if (FloatingTouchTileService.TOUCH_STATE.equals(intent.getAction())) {
+                    int state = intent.getIntExtra(STATE, STATE_UNKNOWN);
+                    if (state != STATE_UNKNOWN) {
+                        visible = state == STATE_VISIBLE;
+                        floatingView.setVisibility(visible ? View.VISIBLE : View.GONE);
+                    }
+                    Intent callbackIntent = new Intent(FloatingTouchTileService.TILE_STATE);
+                    callbackIntent.putExtra(STATE, visible ? STATE_VISIBLE : STATE_HIDDEN);
+                    localBroadcastManager.sendBroadcast(callbackIntent);
+                }
             }
         };
-        LocalBroadcastManager.getInstance(this)
-                .registerReceiver(broadcastReceiver, new IntentFilter(MainActivity.SERVICE_PARAMS));
+        localBroadcastManager.registerReceiver(
+                broadcastReceiver, new IntentFilter(MainActivity.SERVICE_PARAMS));
+        localBroadcastManager.registerReceiver(
+                broadcastReceiver, new IntentFilter(FloatingTouchTileService.TOUCH_STATE));
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        localBroadcastManager.unregisterReceiver(broadcastReceiver);
+        windowManager.removeView(floatingView);
         return super.onUnbind(intent);
     }
 
